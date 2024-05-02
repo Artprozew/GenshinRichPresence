@@ -1,35 +1,90 @@
 import os
-import psutil
 import time
 import re
-from pypresence import Presence
-import urllib.request
 import json
 import requests
 import logging
 import asyncio
+import win32gui
+from typing import Optional, AsyncGenerator, Any
+
+from pypresence import Presence
+import psutil
 import nest_asyncio
-import threading
 
 nest_asyncio.apply()
 
 class GenshinRichPresence():
-    def __init__(self) -> None:
-        self.rpc = Presence(1234834454569025538, loop=asyncio.new_event_loop())
-        self.last_update = time.time()
-        self.last_char = None
-        self.process = None
-        self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
+    r""" 
+    ### TODO:
+        - Option to add mod names
+        - Add weapons?
+        - AFK detection (DONE)
+        - Unit tests?
+        - System tray
+        - Auto open (and 3dmigoto) (with genshin launcher)?
+        - Option to exclude characters (if I don't have them)
+        - Algorithm to know team members? (Or/and with previous user input of team compositions (saved in a JSON))
+        - Show if the player is in menu, bosses, domain, abyss, dialogs, TCG, etc... (HALF DONE)
+        - Custom images/gifs
+        - Show current element the character has
+        - Fix regex for folders?
+        - Define constants: Update rate, etc (HALF DONE)
+        - Detect if 3DMigoto is injected in the game?
+        - Know which location the player is in (maybe getting hashes from the current place) (DONE)
 
+    ### BUG FIXES:
+        - RPC is not "initialized", or updated with initial information (there is none) (FIXED)
+        - Liyue map shows as Mondstadt (FIXED)
+        - Enkanomiya map shows as Inazuma (FIXED)
+        - Chasm does get right the first hash, but then shows also as Mondstadt (FIXED)
+        - It keeps changing characters very fast when for example you are teleporting (and shows you as Raiden, \
+            Sucrose, Traveler, maybe a hash/mod incompatibility issue?)
+    """
+
+    RPC_UPDATE_RATE = 15 # Can have problems with Discord updating if its < 15; Time in milliseconds
+    FOCUS_CHANGE_CHECK_RATE = 10
+
+    def __init__(self) -> None:
+        self.rpc: Presence = Presence(1234834454569025538, loop=asyncio.new_event_loop())
+        self.last_update: float = time.time() + GenshinRichPresence.RPC_UPDATE_RATE
+        self.last_char: list[str, str] = ["", "Unknown"]
+        self.region: Optional[str] = None
+        self.previous_region: Optional[str] = None
+        self.last_region = [None, None]
+        self.process: psutil.Process = None
+        self.updatable: bool = True
+        self.inactive: bool = True
+        self.details: str | None = None
+        self.small_image: str = "unknown"
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(message)s")
+
+
+    def can_update_rpc(self) -> bool:
+        return (time.time() - self.last_update) > GenshinRichPresence.RPC_UPDATE_RATE and self.updatable
+    
+    def set_last_update(self) -> None:
+        self.last_update = time.time()
+
+    def has_changed_focus(self) -> bool:
+        changed = self.inactive
+
+        if (win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact"):
+            self.inactive = False
+            self.logger.debug("Set status as in-game")
+        else:
+            self.inactive = True
+            self.logger.debug("Set status as inactive")
+
+        return changed != self.inactive
+        
     def get_process(self) -> psutil.Process:
         self.logger.info("Searching for Process...")
         process = None
         for proc in psutil.process_iter():
             if "GenshinImpact.exe" in proc.name():
                 process = proc
-            #if "3DMigoto Loader.exe" in proc.name(): # Needs a way to detect if 3DMigoto is also running
-            #    self.logger.info("Process found")
 
         if not process:
             self.logger.info("Process not found. Exiting...")
@@ -37,13 +92,14 @@ class GenshinRichPresence():
             os.system("exit")
 
         return proc
-    
-    def initialize_data(self) -> dict:
+
+    def initialize_data(self) -> tuple:
         self.logger.info("Requesting from endpoint API...")
 
         path = "assets/characters"
         jsonfile = "/data.json"
         data = None
+        world_data = {}
 
         try:
             req = requests.get("https://genshin.jmp.blue/characters/")
@@ -58,64 +114,131 @@ class GenshinRichPresence():
             data.append("arlecchino")
         if "chiori" not in data:
             data.append("chiori")
+        if "arataki-itto" in data:
+            data.remove("arataki-itto")
+            data.append("itto")
+        if "hu-tao" in data:
+            data.remove("hu-tao")
+            data.append("hutao")
 
         if not os.path.exists(path):
             self.logger.info(f'Directory "{path}" does not exists. Creating one...')
             os.makedirs(path)
 
         with open(path + jsonfile, "w+") as file:
-            self.logger.info("Dumping data to JSON file.")
+            self.logger.info("Dumping data to JSON file")
             json.dump(data, file, ensure_ascii=False, indent=4)
 
+        path = "assets/world" # Needs to add validations, etc.
+        if os.path.exists(path + jsonfile):
+                with open(path + jsonfile, "r+") as file:
+                    world_data = json.load(file)
+                    
         self.logger.info("Requests complete")
-        return data
+        return data, world_data
+
+    def parse_region(self) -> str:
+        tmp = self.region
+        tmp = tmp.capitalize()
+        tmp = tmp.split('_')
+        if len(tmp) == 2:
+            tmp[1] = tmp[1].capitalize()
+        tmp = ' '.join(tmp)
+        return tmp
+        
+
+    async def update_rpc(self) -> None:
+        #if not self.can_update_rpc(): return # redundancy
+        self.has_changed_focus()
+
+        if not self.details:
+            self.details = "On Menus"
+        else:
+            if self.region:
+                if self.region != self.last_region[0]: # If the parsed region name is not in memory
+                    if self.region == "liyue" and self.previous_region == "the_chasm": # Assert the chasm gets higher priority
+                        self.region = "the_chasm"
+                        self.last_region = [self.region, "The Chasm"]
+
+                    parsed_region = self.parse_region()
+                    self.details = f"Currently on: {parsed_region}, {'inactive' if self.inactive else 'in-game'}"
+                    self.last_region = [self.region, parsed_region]
+                else:
+                    if self.region == "liyue" and self.previous_region == "the_chasm": # Assert the chasm gets higher priority
+                        self.region = "the_chasm"
+                        self.last_region = [self.region, "The Chasm"]
+
+                    self.details = f"Currently on: {self.last_region[1]}, {'inactive' if self.inactive else 'in-game'}"
+
+        if self.last_char[0]:
+            self.small_image = self.last_char[0].replace("-", "_")
+
+
+        self.rpc.update(
+            start=self.process.create_time(),
+            state=f"Playing as {self.last_char[1]}",
+            details=self.details,
+            large_image="genshin",
+            small_image=self.small_image,
+            large_text="Genshin Impact",
+            small_text=self.last_char[1]
+            )
+        
+        self.set_last_update()
+        self.updatable = False
+        self.logger.debug("RPC Updated")
+
     
-    
-    async def tail_file(self, file) -> any:
+    async def tail_file(self, file) -> AsyncGenerator[str, Any]:
         file.seek(0, os.SEEK_END)
+        focus_check = time.time()
         while True:
             line = file.readline()
             if not line:
-                if (time.time() - self.last_update) > 15: # If there's no new lines, will try to update the last character, otherwise it would be stopped here
-                    if self.last_char:
-                        self.logger.info(f"Last char atualizado com sucesso apos cooldown {self.last_char[1]} (AFK)")
-                        self.rpc.update(start=self.process.create_time(), state=f"Playing as {self.last_char[1]}", large_image="genshin", small_image=self.last_char[0].replace("-", "_"), large_text="Genshin Impact", small_text=self.last_char[1])
-                        self.last_char = None
-                        self.last_update = time.time()
+                if (time.time() - focus_check) > GenshinRichPresence.FOCUS_CHANGE_CHECK_RATE: # Not working as expected? Updating too frequently?
+                    if self.has_changed_focus(): # Need to periodically check if user isn't alt-tabbed
+                        self.updatable = True
+                    focus_check = time.time()
+                if self.can_update_rpc(): # If there's no new lines, will try to update the last character after 15s, otherwise it would be stopped here
+                    await self.update_rpc()
                 await asyncio.sleep(0.4)
                 continue
             yield line
 
-    async def handle_log(self, data: dict) -> None:
+    async def handle_log(self, data: list, world_data: dict) -> None:
+        self.logger.info("Updating presence")
+        await self.update_rpc()
+
+        self.logger.info("Opening log file")
         os.chdir(r"D:\Programas\3dmigoto")
-        self.logger.info("Last char definido")
         logfile = open(os.curdir + r"\d3d11_log.txt")
+        self.logger.info("Log file opened, the loop is now running")
 
         async for line in self.tail_file(logfile):
-            match = re.match(r"\s+?TextureOverride\\Mods(.+)\\(.+) matched resource with hash=([a-zA-Z0-9_.-]*) type", line)
-            if not match:
-                if self.last_char: # Didn't update any new character, but there's still one update pending from earlier when it was on cooldown
-                    if (time.time() - self.last_update) > 10:
-                        self.logger.info(f"Last char atualizado com sucesso apos cooldown {self.last_char[1]}")
-                        self.rpc.update(start=self.process.create_time(), state=f"Playing as {self.last_char[1]}", large_image="genshin", small_image=self.last_char[0].replace("-", "_"), large_text="Genshin Impact", small_text=self.last_char[1])
-                        self.last_char = None
-                        self.last_update = time.time()
-                continue
+            match = re.search(r"TextureOverride\\Mods(.+) matched resource with hash=([a-zA-Z0-9_.-]*)", line)
+            if not match: continue
 
-            char = match.group(1).split("\\")[1] # Possible "character", but could be something else
-            refactoredchar = char.lower().replace(" ", "-") # Data uses "-" instead of "_"
-            for i in data:
-                if i.lower().startswith(refactoredchar): # Character confirmed
-                    if (time.time() - self.last_update) > 10:
-                        self.rpc.update(start=self.process.create_time(), state=f"Playing as {char}", large_image="genshin", small_image=refactoredchar.replace("-", "_"), large_text="Genshin Impact", small_text=char)
-                        #last_char = None
-                        self.last_update = time.time()
-                        print(char)
+            character = match.group(1).split("\\")[1] # Possible "character", but could be something else
+            asset = f"TextureOverride{match.group(1).split('\\')[3]}"
+            refactoredchar = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
+            self.logger.debug(f"POSSIBLE CHARACTER: {character}, {refactoredchar}, {match.group(0)}")
+            
+            for name in data:
+                if name.lower().startswith(refactoredchar): # Character confirmed
+                    if self.last_char[0] != refactoredchar: # Check if it's not the current character
+                        self.last_char = [refactoredchar, character]
+                        self.updatable = True
+                        self.logger.debug(f"Updated last_char {self.last_char[1]}")
                         break
-                    else:
-                        self.last_char = [refactoredchar, char] # Found character, but needs to wait cooldown
-                        self.logger.info(f"Last char atualizado {self.last_char[1]}")
-                        break
+
+            for texture, value in world_data.items():
+                if texture == asset:
+                    if self.previous_region != self.region:
+                        self.previous_region = self.region
+                    self.region = value[1]
+                    self.updatable = True
+                    self.logger.debug(f"Updated region to {value[1]}, hash: {value[0]}")
+                    break
 
 
     def main(self) -> None:
@@ -127,12 +250,12 @@ class GenshinRichPresence():
         self.logger.info("Connected")
 
         self.logger.info("Initializing data")
-        data = self.initialize_data()
-        asyncio.get_event_loop().run_until_complete(self.handle_log(data))
+        data, world_data = self.initialize_data()
+        self.logger.info("Running Log tail loop")
+        asyncio.get_event_loop().run_until_complete(self.handle_log(data, world_data))
 
 
-
-def main():
+def main() -> None:
     GRPC = GenshinRichPresence()
     GRPC.main()
 
