@@ -2,46 +2,19 @@ import os
 import time
 import re
 import json
-import requests
 import logging
 import asyncio
-import win32gui
 from typing import Optional, AsyncGenerator, Any
 
 from pypresence import Presence
+import requests
+import win32gui
 import psutil
 import nest_asyncio
 
 nest_asyncio.apply()
 
 class GenshinRichPresence():
-    r""" 
-    ### TODO:
-        - Option to add mod names
-        - Add weapons?
-        - AFK detection (DONE)
-        - Unit tests?
-        - System tray
-        - Auto open (and 3dmigoto) (with genshin launcher)?
-        - Option to exclude characters (if I don't have them)
-        - Algorithm to know team members? (Or/and with previous user input of team compositions (saved in a JSON))
-        - Show if the player is in menu, bosses, domain, abyss, dialogs, TCG, etc... (HALF DONE)
-        - Custom images/gifs
-        - Show current element the character has
-        - Fix regex for folders?
-        - Define constants: Update rate, etc (HALF DONE)
-        - Detect if 3DMigoto is injected in the game?
-        - Know which location the player is in (maybe getting hashes from the current place) (DONE)
-
-    ### BUG FIXES:
-        - RPC is not "initialized", or updated with initial information (there is none) (FIXED)
-        - Liyue map shows as Mondstadt (FIXED)
-        - Enkanomiya map shows as Inazuma (FIXED)
-        - Chasm does get right the first hash, but then shows also as Mondstadt (FIXED)
-        - It keeps changing characters very fast when for example you are teleporting (and shows you as Raiden, \
-            Sucrose, Traveler, maybe a hash/mod incompatibility issue?)
-    """
-
     RPC_UPDATE_RATE = 15 # Can have problems with Discord updating if its < 15; Time in milliseconds
     FOCUS_CHANGE_CHECK_RATE = 10
 
@@ -63,7 +36,7 @@ class GenshinRichPresence():
 
     def can_update_rpc(self) -> bool:
         return (time.time() - self.last_update) > GenshinRichPresence.RPC_UPDATE_RATE and self.updatable
-    
+
     def set_last_update(self) -> None:
         self.last_update = time.time()
 
@@ -78,7 +51,7 @@ class GenshinRichPresence():
             self.logger.debug("Set status as inactive")
 
         return changed != self.inactive
-        
+
     def get_process(self) -> psutil.Process:
         self.logger.info("Searching for Process...")
         process = None
@@ -133,7 +106,7 @@ class GenshinRichPresence():
         if os.path.exists(path + jsonfile):
                 with open(path + jsonfile, "r+") as file:
                     world_data = json.load(file)
-                    
+
         self.logger.info("Requests complete")
         return data, world_data
 
@@ -145,7 +118,7 @@ class GenshinRichPresence():
             tmp[1] = tmp[1].capitalize()
         tmp = ' '.join(tmp)
         return tmp
-        
+
 
     async def update_rpc(self) -> None:
         #if not self.can_update_rpc(): return # redundancy
@@ -183,12 +156,12 @@ class GenshinRichPresence():
             large_text="Genshin Impact",
             small_text=self.last_char[1]
             )
-        
+
         self.set_last_update()
         self.updatable = False
         self.logger.debug("RPC Updated")
 
-    
+
     async def tail_file(self, file) -> AsyncGenerator[str, Any]:
         file.seek(0, os.SEEK_END)
         focus_check = time.time()
@@ -222,7 +195,7 @@ class GenshinRichPresence():
             asset = f"TextureOverride{match.group(1).split('\\')[3]}"
             refactoredchar = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
             self.logger.debug(f"POSSIBLE CHARACTER: {character}, {refactoredchar}, {match.group(0)}")
-            
+
             for name in data:
                 if name.lower().startswith(refactoredchar): # Character confirmed
                     if self.last_char[0] != refactoredchar: # Check if it's not the current character
