@@ -1,0 +1,354 @@
+{
+    "TextureOverrideLSMondstadtTPScreen": [
+        "0e22a02d",
+        "mondstadt"
+    ],
+    "TextureOverrideWolfhookIB": [
+        "6dc977a7",
+        "mondstadt"
+    ],
+    "TextureOverrideValberryIB": [
+        "57be08bf",
+        "mondstadt"
+    ],
+    "TextureOverrideSmallLampGrassIB": [
+        "99ca5c70",
+        "mondstadt"
+    ],
+    "TextureOverridePhilanemoMushroomIB": [
+        "96eef065",
+        "mondstadt"
+    ],
+    "TextureOverrideCeciliaIB": [
+        "9d864ea7",
+        "mondstadt"
+    ],
+    "TextureOverrideCallaLilyIB": [
+        "628a5148",
+        "mondstadt"
+    ],
+    "TextureOverrideWindwheelAsterIB": [
+        "f4fcbc7e",
+        "mondstadt"
+    ],
+    "TextureOverridePartyMondstat": [
+        "de758dcf",
+        "mondstadt"
+    ],
+    "TextureOverrideLSLiyueTPScreen": [
+        "e215b20a",
+        "liyue"
+    ],
+    "TextureOverrideStarconchIB": [
+        "f7a820d4",
+        "liyue"
+    ],
+    "TextureOverrideNoctilucousJade2IB": [
+        "251c33d0",
+        "liyue"
+    ],
+    "TextureOverrideNoctilucousJadeIB": [
+        "627d221d",
+        "liyue"
+    ],
+    "TextureOverrideSilkFlowerIB": [
+        "38f9d1d8",
+        "liyue"
+    ],
+    "TextureOverrideGlazeLily_AMIB": [
+        "3a532d93",
+        "liyue"
+    ],
+    "TextureOverrideGlazeLily_PMIB": [
+        "79041fd5",
+        "liyue"
+    ],
+    "TextureOverrideVioletgrassIB": [
+        "f0aaaa18",
+        "liyue"
+    ],
+    "TextureOverrideJueyunChiliIB": [
+        "8c112062",
+        "liyue"
+    ],
+    "TextureOverrideQingxinIB": [
+        "78312532",
+        "liyue"
+    ],
+    "TextureOverrideCorLapisIB": [
+        "fdb80ee6",
+        "liyue"
+    ],
+    "TextureOverrideLotusHeadIB": [
+        "f42bbb57",
+        "liyue"
+    ],
+    "TextureOverrideHorseTailIB": [
+        "dec9b3a6",
+        "liyue"
+    ],
+    "TextureOverrideBambooShootIB": [
+        "be7a06cb",
+        "liyue"
+    ],
+    "TextureOverridePartyLiyue": [
+        "0e0babd0",
+        "liyue"
+    ],
+    "TextureOverrideScarletQuarztBaseIB": [
+        "7c0c01cb",
+        "dragonspine"
+    ],
+    "TextureOverrideScarletQuarztIB": [
+        "f148fb56",
+        "dragonspine"
+    ],
+    "TextureOverrideStarSilverIB": [
+        "36bce1cb",
+        "dragonspine"
+    ],
+    "TextureOverrideRuinBrazierBase": [
+        "7e5f3457",
+        "dragonspine"
+    ],
+    "TextureOverrideRuinBrazierTop": [
+        "71f3489c",
+        "dragonspine"
+    ],
+    "TextureOverrideLSDragonspineTPScreen": [
+        "d7b6f066",
+        "dragonspine"
+    ],
+    "TextureOverrideLSInazumaTPScreen": [
+        "f7659a3a",
+        "inazuma"
+    ],
+    "TextureOverrideOnikabuto2IB": [
+        "859c63f5",
+        "inazuma"
+    ],
+    "TextureOverrideSeaGanodermaIB": [
+        "b7f28e97",
+        "inazuma"
+    ],
+    "TextureOverrideSangoPearlIB": [
+        "34847e64",
+        "inazuma"
+    ],
+    "TextureOverrideCrystalMarrowIB": [
+        "7cf1a5dc",
+        "inazuma"
+    ],
+    "TextureOverrideAmakumoFruitIB": [
+        "63f66d60",
+        "inazuma"
+    ],
+    "TextureOverrideNakuWeedIB": [
+        "43436e93",
+        "inazuma"
+    ],
+    "TextureOverrideDendrobiumIB": [
+        "819b9e2b",
+        "inazuma"
+    ],
+    "TextureOverrideFluorescentFungusIB": [
+        "33c754ef",
+        "inazuma"
+    ],
+    "TextureOverrideLavenderMelonIB": [
+        "e7ee74fc",
+        "inazuma"
+    ],
+    "TextureOverrideSeagrassIB": [
+        "d2cd279d",
+        "inazuma"
+    ],
+    "TextureOverridePartyInazuma": [
+        "e8f1a750",
+        "inazuma"
+    ],
+    "TextureOverrideLSEnkanomiyaTPScreen": [
+        "4869caec",
+        "enkanomiya"
+    ],
+    "TextureOverrideLSChasmTPScreen": [
+        "910ff5fe",
+        "the_chasm"
+    ],
+    "TextureOverrideUniqueRockIB": [
+        "b5230d4b",
+        "the_chasm"
+    ],
+    "TextureOverrideSpoutRocksIB": [
+        "248c30b6",
+        "the_chasm"
+    ],
+    "TextureOverrideLSSumeruTPScreen": [
+        "593c1434",
+        "sumeru_forest"
+    ],
+    "TextureOverrideKalpalataLotusIB": [
+        "4fe4b66a",
+        "sumeru_forest"
+    ],
+    "TextureOverrideNilotpalaLotusAMIB": [
+        "8cb2257e",
+        "sumeru_forest"
+    ],
+    "TextureOverrideNilotpalaLotusPMIB": [
+        "b09868b9",
+        "sumeru_forest"
+    ],
+    "TextureOverrideRukkhashavaMushroomsIB": [
+        "6c5245d7",
+        "sumeru_forest"
+    ],
+    "TextureOverrideMourningFlowerIB": [
+        "a4a7f380",
+        "sumeru_forest"
+    ],
+    "TextureOverridePadisarahIB": [
+        "df7048a5",
+        "sumeru_forest"
+    ],
+    "TextureOverrideSumeruRoseIB": [
+        "d485de86",
+        "sumeru_forest"
+    ],
+    "TextureOverrideZaytunPeachIB": [
+        "a7e5836c",
+        "sumeru_forest"
+    ],
+    "TextureOverrideViparyasIB": [
+        "003d125c",
+        "sumeru_forest"
+    ],
+    "TextureOverridePartySumeru": [
+        "0e7262bc",
+        "sumeru_forest"
+    ],
+    "TextureOverrideLSSumeruDesertTPScreen": [
+        "08b0e6b4",
+        "sumeru_desert"
+    ],
+    "TextureOverridePartyDesert": [
+        "4a5921f3",
+        "sumeru_desert"
+    ],
+    "TextureOverrideTrishiraiteIB": [
+        "b702dbd8",
+        "sumeru_desert"
+    ],
+    "TextureOverrideSandGreasePupaIB": [
+        "99d89e49",
+        "sumeru_desert"
+    ],
+    "TextureOverrideHennaBerryIB": [
+        "5a753dc3",
+        "sumeru_desert"
+    ],
+    "TextureOverrideScarabIB": [
+        "7d404ba2",
+        "sumeru_desert"
+    ],
+    "TextureOverrideAjilenakhNutIB": [
+        "dfd09643",
+        "sumeru_desert"
+    ],
+    "TextureOverrideLSFountaineTPScreen": [
+        "59fed606",
+        "fontaine"
+    ],
+    "TextureOverrideLakelightLilyIB": [
+        "03e30a87",
+        "fontaine"
+    ],
+    "TextureOverrideLumidouceBellIB": [
+        "0cd21b18",
+        "fontaine"
+    ],
+    "TextureOverrideRainbowRoseIB": [
+        "59d36a58",
+        "fontaine"
+    ],
+    "TextureOverrideRomaritimeFlower1IB": [
+        "de8a109b",
+        "fontaine"
+    ],
+    "TextureOverrideRomaritimeFlower2IB": [
+        "ff7a606e",
+        "fontaine"
+    ],
+    "TextureOverrideRomaritimeFlower3IB": [
+        "f751a6f9",
+        "fontaine"
+    ],
+    "TextureOverrideSubdetectionUnitIB": [
+        "3604a065",
+        "fontaine"
+    ],
+    "TextureOverrideBerylConchIB": [
+        "22adb69a",
+        "fontaine"
+    ],
+    "TextureOverrideLumitoileIB": [
+        "c16bc9d9",
+        "fontaine"
+    ],
+    "TextureOverrideMarcotteIB": [
+        "21024f8a",
+        "fontaine"
+    ],
+    "TextureOverrideBulleFruitIB": [
+        "ad5c7eb7",
+        "fontaine"
+    ],
+    "TextureOverrideTidalgaIB": [
+        "4c968944",
+        "fontaine"
+    ],
+    "TextureOverridePlueLotusIB": [
+        "d08557ca",
+        "fontaine"
+    ],
+    "TextureOverridePartyFontaine": [
+        "9846353c",
+        "fontaine"
+    ],
+    "TextureOverrideLSDungeonTPScreen": [
+        "121d3c8f",
+        "domain"
+    ],
+    "TextureOverrideLSTeapotTPScreen": [
+        "874fa63b",
+        "teapot"
+    ],
+    "TextureOverridePartySpace": [
+        "d72dd0df",
+        "teapot"
+    ],
+    "TextureOverrideLSChenyuTPScreen": [
+        "a292accf",
+        "chenyu"
+    ],
+    "TextureOverrideChenyuAdepteaIB": [
+        "ee9fc358",
+        "chenyu"
+    ],
+    "TextureOverrideChenyuAdeptea2IB": [
+        "52bf40fe",
+        "chenyu"
+    ],
+    "TextureOverrideClearwaterJadeIB": [
+        "d18f4b41",
+        "chenyu"
+    ],
+    "TextureOverrideClearwaterJade2IB": [
+        "38da73d8",
+        "chenyu"
+    ],
+    "TextureOverrideFluffFleaceGoatIB": [
+        "77850b79",
+        "chenyu"
+    ]
+}
