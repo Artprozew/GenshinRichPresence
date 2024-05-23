@@ -1,9 +1,12 @@
 import asyncio
+from configparser import ConfigParser
 from io import TextIOWrapper
 import logging
 import logging.config
 import os
 import re
+import sys
+import tempfile
 import time
 from typing import Optional, AsyncGenerator, Final, Dict, List
 
@@ -24,11 +27,14 @@ class GenshinRichPresence():
     LOG_TAIL_SLEEP_TIME: Final[float] = float(os.getenv("LOG_TAIL_SLEEP_TIME", 1.5)) # Delay if new lines aren't found on the .log
 
     def __init__(self) -> None:
-        if not self.GIMI_DIRECTORY:
-            raise(RuntimeError("You should set the GIMI_DIRECTORY path!"
-                               "(https://github.com/Artprozew/GenshinRichPresence?tab=readme-ov-file#how-to-use)"))
+        if os.path.exists("logging.conf"):
+            logging.config.fileConfig("logging.conf")
+        else:
+            logging.basicConfig(
+                level=logging.INFO,
+                format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
+            )
 
-        logging.config.fileConfig("logging.conf")
         self.logger: logging.Logger = logging.getLogger(__name__)
 
         self.rpc: Presence = Presence(
@@ -79,7 +85,7 @@ class GenshinRichPresence():
         return changed
 
     def get_process(self) -> psutil.Process | None:
-        self.logger.info("Searching for Process...")
+        self.logger.info("Searching for process")
 
         for proc in psutil.process_iter():
             if "GenshinImpact.exe" in proc.name():
@@ -87,6 +93,15 @@ class GenshinRichPresence():
 
         return None
     
+    def handle_exceptions(self, exc_type, exc_value, tb) -> None:
+        import traceback
+        with open(f"{tempfile.gettempdir()}\\GenshinRichPresence\\traceback.txt", "w") as file:
+            for line in traceback.format_exception(exc_type, exc_value, tb):
+                file.writelines(line)
+        traceback.print_exception(exc_type, exc_value, tb)
+        os.system("pause")
+        sys.exit(-1)
+
     def open_log_file(self) -> TextIOWrapper:
         self.logger.info("Opening log file")
 
@@ -96,6 +111,43 @@ class GenshinRichPresence():
         
         wrapper = open(log_file, 'r')
         return wrapper
+
+    def save_ini_file(self, config, ini_file) -> None:
+        if not os.path.exists(os.path.dirname(ini_file)):
+            os.mkdir(os.path.dirname(ini_file))
+
+        if not config.has_option("SETTINGS", "GIMI_DIRECTORY"):
+            config.add_section("SETTINGS")
+        config["SETTINGS"]["GIMI_DIRECTORY"] = self.GIMI_DIRECTORY
+
+        with open(ini_file, "w") as file:
+            config.write(file)
+
+    def check_gimi_dir(self) -> None:
+        config = ConfigParser()
+        ini_file = f"{tempfile.gettempdir()}\\GenshinRichPresence\\config.ini"
+
+        if not os.path.exists(ini_file):
+            print("Please write here your GIMI directory path")
+            self.GIMI_DIRECTORY = input("Path > ")
+            self.save_ini_file(config, ini_file)
+        else:
+            config.read(ini_file)
+            self.GIMI_DIRECTORY = config.get("SETTINGS", "GIMI_DIRECTORY")
+
+            print(f"GIMI directory found: {self.GIMI_DIRECTORY}\nPress ENTER if you wanna keep it."
+            " Otherwise, write the new directory")
+            answer = input(" > ")
+
+            if not answer:
+                config.read(ini_file)
+                self.GIMI_DIRECTORY = config.get("SETTINGS", "GIMI_DIRECTORY")
+            else:
+                self.GIMI_DIRECTORY = answer
+                self.save_ini_file(config, ini_file)
+
+        if not self.GIMI_DIRECTORY:
+            raise(RuntimeError("You should set the GIMI_DIRECTORY path!"))
 
     def parse_match(self, match: re.Match) -> tuple[str, str, str]:
         character: str = match.group(1).split("\\")[1] # Possible "character", but could be something else
@@ -175,8 +227,6 @@ class GenshinRichPresence():
 
 
     async def tail_file(self, file: TextIOWrapper) -> AsyncGenerator[str, None]:
-        self.logger.info("Running log tail loop")
-
         size: int = os.stat(os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")).st_size
         file.seek(os.SEEK_SET)
         if size > 5000000:
@@ -185,6 +235,8 @@ class GenshinRichPresence():
         last_position: int = file.tell()
         line: str = ''
 
+        self.logger.info("Running log file tail loop")
+        self.logger.info("Your activity will now be updated accordingly")
         while True:
             file.seek(last_position)
             line = file.readline()
@@ -201,13 +253,12 @@ class GenshinRichPresence():
             await asyncio.sleep(self.LOG_TAIL_SLEEP_TIME)
 
     async def handle_log(self) -> None:
-        self.logger.info("Updating presence")
+        self.logger.info("Initialize presence activity")
         await self.update_rpc()
 
         text_wrapper: TextIOWrapper = self.open_log_file()
         compiled_regex: re.Pattern = re.compile(r"TextureOverride\\Mods(.+) matched resource with hash=([a-zA-Z0-9_.-]*)")
 
-        self.logger.info("Log file opened, the loop will now run")
         async for line in self.tail_file(text_wrapper):
             match: re.Match = compiled_regex.search(line)
             if not match: continue
@@ -218,15 +269,19 @@ class GenshinRichPresence():
 
 
     def main(self) -> None:
+        sys.excepthook = self.handle_exceptions
+
+        self.check_gimi_dir()
+
         self.process = self.get_process()
         if not self.process:
-            self.logger.info("Process not found. Exiting...")
+            self.logger.info("Process not found. Exiting")
             os.system("pause")
             return
         
-        self.logger.info("Process found. Starting RPC...")
+        self.logger.info(f"Process {self.process.pid} found. Starting RPC")
 
-        self.logger.info("Connecting and starting handshake...")
+        self.logger.info("Connecting and starting handshake")
         self.rpc.connect()
         self.logger.info("Connected")
 
