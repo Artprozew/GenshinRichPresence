@@ -1,4 +1,5 @@
 import asyncio
+from io import TextIOWrapper
 import logging
 import os
 import re
@@ -19,7 +20,6 @@ nest_asyncio.apply()
 class GenshinRichPresence():
     GIMI_DIRECTORY: Final[os.PathLike] = os.getenv("GIMI_DIRECTORY")
     RPC_UPDATE_RATE: Final[int] = 15 # Can have problems with Discord updating it if its < 15; Time in milliseconds
-    FOCUS_CHANGE_CHECK_RATE: Final[float] = 10.0
     LOG_TAIL_SLEEP_TIME: Final[float] = 0.4
 
     def __init__(self) -> None:
@@ -27,9 +27,15 @@ class GenshinRichPresence():
             raise(RuntimeError("You should set the GIMI_DIRECTORY path! (How to)"))
 
         self.logger: logging.Logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s")
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
+        )
 
-        self.rpc: Presence = Presence(os.getenv("APP_ID") or 1234834454569025538, loop=asyncio.new_event_loop())
+        self.rpc: Presence = Presence(
+            os.getenv("APP_ID") or 1234834454569025538,
+            loop=asyncio.new_event_loop(),
+        )
         self.process: Optional[psutil.Process] = None
 
         self.last_char: List[str, str] = ["", "Unknown"]
@@ -49,22 +55,29 @@ class GenshinRichPresence():
 
 
     def can_update_rpc(self) -> bool:
-        return (time.time() - self.last_update) > self.RPC_UPDATE_RATE and self.updatable
+        if (time.time() - self.last_update) > self.RPC_UPDATE_RATE:
+            self.check_changed_focus()
+            return self.updatable
+
+        return False
 
     def set_last_update(self) -> None:
         self.last_update = time.time()
 
-    def has_changed_focus(self) -> bool:
-        changed = self.inactive
+    def check_changed_focus(self) -> bool:
+        changed: bool = self.inactive
 
-        if (win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact"):
+        if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":
             self.inactive = False
-            self.logger.debug("Set status as in-game")
         else:
             self.inactive = True
-            self.logger.debug("Set status as inactive")
 
-        return changed != self.inactive
+        changed = changed != self.inactive
+        if changed:
+            self.updatable = True
+            self.logger.debug(f"Changed inactive status to {self.inactive}")
+
+        return changed
 
     def get_process(self) -> psutil.Process | None:
         self.logger.info("Searching for Process...")
@@ -72,14 +85,24 @@ class GenshinRichPresence():
         for proc in psutil.process_iter():
             if "GenshinImpact.exe" in proc.name():
                 return proc
-                
+
         return None
+    
+    def open_log_file(self) -> TextIOWrapper:
+        self.logger.info("Opening log file")
+
+        log_file = os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")
+        if not os.path.exists(log_file):
+            raise(FileNotFoundError(f'The file "{log_file}" could not be found'))
+        
+        wrapper = open(log_file, 'r')
+        return wrapper
 
     def parse_match(self, match: re.Match) -> tuple[str, str, str]:
-        character = match.group(1).split("\\")[1] # Possible "character", but could be something else
-        refactoredchar = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
-        asset = f"TextureOverride{match.group(1).split('\\')[3]}"
-        
+        character: str = match.group(1).split("\\")[1] # Possible "character", but could be something else
+        refactoredchar: str = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
+        asset: str = f"TextureOverride{match.group(1).split('\\')[3]}"
+
         self.logger.debug(f"POSSIBLE CHARACTER: {character}, {refactoredchar}, {match.group(0)}")
         return character, refactoredchar, asset
 
@@ -103,14 +126,14 @@ class GenshinRichPresence():
                 break
 
     def parse_region(self) -> str:
-        region = self.region
+        region: str = self.region
         region = region.capitalize()
 
         tmp = []
         for word in region.split("_"):
             tmp.append(word.capitalize())
 
-        return ' '.join(tmp)
+        return " ".join(tmp)
 
 
     def update_rpc_details(self) -> None:
@@ -128,10 +151,10 @@ class GenshinRichPresence():
             parsed_region = self.parse_region()
             self.last_region = [self.region, parsed_region]
 
-        self.details = f"Currently on: {self.last_region[1]}, {'inactive' if self.inactive else 'in-game'}"
+        self.details = f"{'Inactive' if self.inactive else 'In-game'}. Exploring {self.last_region[1]}"
 
     async def update_rpc(self) -> None:
-        self.has_changed_focus()
+        self.check_changed_focus()
         self.update_rpc_details()
 
         if self.last_char[0]:
@@ -144,7 +167,7 @@ class GenshinRichPresence():
             large_image="genshin",
             small_image=self.small_image,
             large_text="Genshin Impact",
-            small_text=self.last_char[1]
+            small_text=self.last_char[1],
             )
 
         self.set_last_update()
@@ -152,39 +175,42 @@ class GenshinRichPresence():
         self.logger.debug("RPC Updated")
 
 
-    async def tail_file(self, file) -> AsyncGenerator[str, None]:
-        focus_check: float = time.time()
+    async def tail_file(self, file: TextIOWrapper) -> AsyncGenerator[str, None]:
         self.logger.info("Running log tail loop")
-        file.seek(0, os.SEEK_END)
+
+        size: int = os.stat(os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")).st_size
+        file.seek(os.SEEK_SET)
+        if size > 5000000:
+            file.seek(size - 5000000, os.SEEK_SET) # Reads the last 5MB
+
+        last_position: int = file.tell()
+        line: str = ''
 
         while True:
+            file.seek(last_position)
             line = file.readline()
 
-            if not line:
-                if (time.time() - focus_check) > self.FOCUS_CHANGE_CHECK_RATE: # Not working as expected? Updating too frequently?
-                    if self.has_changed_focus(): # Need to periodically check if user isn't alt-tabbed
-                        self.updatable = True
-                    focus_check = time.time()
-
-                if self.can_update_rpc(): # If there's no new lines, will try to update the last character after 15s, otherwise it would be stopped here
-                    await self.update_rpc()
-                await asyncio.sleep(self.LOG_TAIL_SLEEP_TIME)
+            if line:
+                last_position = file.tell()
+                yield line
                 continue
-            
-            yield line
+
+            # If there's no new lines, will check for updates, preventing outdated info
+            if self.can_update_rpc():
+                await self.update_rpc()
+
+            await asyncio.sleep(self.LOG_TAIL_SLEEP_TIME)
 
     async def handle_log(self) -> None:
         self.logger.info("Updating presence")
         await self.update_rpc()
 
-        self.logger.info("Opening log file")
-        if not os.path.exists(os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")):
-            raise(FileNotFoundError(f'The file "{os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")}" could not be found'))
-        logfile = open(os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt"))
+        text_wrapper: TextIOWrapper = self.open_log_file()
+        compiled_regex: re.Pattern = re.compile(r"TextureOverride\\Mods(.+) matched resource with hash=([a-zA-Z0-9_.-]*)")
 
         self.logger.info("Log file opened, the loop will now run")
-        async for line in self.tail_file(logfile):
-            match = re.search(r"TextureOverride\\Mods(.+) matched resource with hash=([a-zA-Z0-9_.-]*)", line)
+        async for line in self.tail_file(text_wrapper):
+            match: re.Match = compiled_regex.search(line)
             if not match: continue
 
             character, refactoredchar, asset = self.parse_match(match)
@@ -209,5 +235,5 @@ class GenshinRichPresence():
         asyncio.get_event_loop().run_until_complete(self.handle_log())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     GenshinRichPresence().main()
