@@ -1,6 +1,7 @@
 import asyncio
 from io import TextIOWrapper
 import logging
+import logging.config
 import os
 import re
 import time
@@ -19,21 +20,19 @@ nest_asyncio.apply()
 
 class GenshinRichPresence():
     GIMI_DIRECTORY: Final[os.PathLike] = os.getenv("GIMI_DIRECTORY")
-    RPC_UPDATE_RATE: Final[int] = 15 # Can have problems with Discord updating it if its < 15; Time in milliseconds
-    LOG_TAIL_SLEEP_TIME: Final[float] = 0.4
+    RPC_UPDATE_RATE: Final[int] = int(os.getenv("RPC_UPDATE_RATE", 15)) # Can have problems with Discord updating it if its < 15
+    LOG_TAIL_SLEEP_TIME: Final[float] = float(os.getenv("LOG_TAIL_SLEEP_TIME", 1.5)) # Delay if new lines aren't found on the .log
 
     def __init__(self) -> None:
         if not self.GIMI_DIRECTORY:
-            raise(RuntimeError("You should set the GIMI_DIRECTORY path! (How to)"))
+            raise(RuntimeError("You should set the GIMI_DIRECTORY path!"
+                               "(https://github.com/Artprozew/GenshinRichPresence?tab=readme-ov-file#how-to-use)"))
 
+        logging.config.fileConfig("logging.conf")
         self.logger: logging.Logger = logging.getLogger(__name__)
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
-        )
 
         self.rpc: Presence = Presence(
-            os.getenv("APP_ID") or 1234834454569025538,
+            int(os.getenv("APP_ID", 1234834454569025538)),
             loop=asyncio.new_event_loop(),
         )
         self.process: Optional[psutil.Process] = None
