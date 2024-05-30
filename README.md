@@ -29,6 +29,7 @@ However, anti-virus might flag the .exe incorrectly as a "virus", you can check 
 
 - Download the executable from [Releases][releases]
 - [GIMI][GIMI] with mods
+- You still need [Region.ini][Region.ini] on your game if you want it to display your region
 
 ### Instructions
 
@@ -103,6 +104,7 @@ This project is licensed under MIT license; Refer to: [LICENSE][LICENSE]
 [releases]: https://github.com/Artprozew/GenshinRichPresence/releases
 
 [GIMI]: https://github.com/SilentNightSound/GI-Model-Importer
+[Region.ini]: https://github.com/leotorrez/LeoTools/blob/main/releases/Region.ini
 [Python]: https://www.python.org/downloads/release/python-3123
 [Poetry]: https://python-poetry.org/docs/#installing-with-the-official-installer
 
