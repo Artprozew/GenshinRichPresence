@@ -75,6 +75,10 @@ Some of the issues described here may be fixed or worked around in the future. T
 - Due to the program relying on analyzing hashes, some information might be incorrect at times. These hashes may be wrong or outdated.
 - Character mods for GIMI are currently required for the program to detect your characters.
 
+## Disclaimer
+
+GenshinRichPresence is an unofficial third-party application and is not affiliated with HoYoverse in any way. It is developed and maintained independently.
+
 ### Anti-Virus Disclaimer
 
 Some anti-virus software (Windows Defender or similar) might flag the executable as a potential threat due to overly cautious heuristics. This is a known issue called **"false positive"**, especially considering the program is built from **Python** code.
