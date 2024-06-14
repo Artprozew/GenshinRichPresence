@@ -8,7 +8,7 @@ import re
 import sys
 import tempfile
 import time
-from typing import Optional, AsyncGenerator, Final, Dict, List
+from typing import Optional, AsyncGenerator, Final
 
 import dotenv
 import nest_asyncio
@@ -43,10 +43,10 @@ class GenshinRichPresence():
         )
         self.process: Optional[psutil.Process] = None
 
-        self.last_char: List[str, str] = ["", "Unknown"]
+        self.last_char: list[str, str] = ["", "Unknown"]
         self.region: Optional[str] = None
         self.previous_region: Optional[str] = None
-        self.last_region: List[Optional[str], Optional[str]] = [None, None]
+        self.last_region: list[Optional[str], Optional[str]] = [None, None]
         
         self.last_update: float = time.time() + self.RPC_UPDATE_RATE
         self.updatable: bool = True
@@ -55,8 +55,8 @@ class GenshinRichPresence():
         self.details: Optional[str] = None
         self.small_image: str = "unknown"
 
-        self.data: List[str]
-        self.world_data: Dict[str, str]
+        self.data: list[str]
+        self.world_data: dict[str, str]
 
 
     def can_update_rpc(self) -> bool:
@@ -66,8 +66,10 @@ class GenshinRichPresence():
 
         return False
 
+
     def set_last_update(self) -> None:
         self.last_update = time.time()
+
 
     def check_changed_focus(self) -> bool:
         changed: bool = self.inactive
@@ -84,6 +86,7 @@ class GenshinRichPresence():
 
         return changed
 
+
     def get_process(self) -> psutil.Process | None:
         self.logger.info("Searching for process")
 
@@ -93,14 +96,18 @@ class GenshinRichPresence():
 
         return None
     
+
     def handle_exceptions(self, exc_type, exc_value, tb) -> None:
         import traceback
+
         with open(f"{tempfile.gettempdir()}\\GenshinRichPresence\\traceback.txt", "w") as file:
             for line in traceback.format_exception(exc_type, exc_value, tb):
                 file.writelines(line)
+
         traceback.print_exception(exc_type, exc_value, tb)
         os.system("pause")
         sys.exit(-1)
+
 
     def open_log_file(self) -> TextIOWrapper:
         self.logger.info("Opening log file")
@@ -112,6 +119,7 @@ class GenshinRichPresence():
         wrapper = open(log_file, 'r')
         return wrapper
 
+
     def save_ini_file(self, config, ini_file) -> None:
         if not os.path.exists(os.path.dirname(ini_file)):
             os.mkdir(os.path.dirname(ini_file))
@@ -122,6 +130,7 @@ class GenshinRichPresence():
 
         with open(ini_file, "w") as file:
             config.write(file)
+
 
     def check_gimi_dir(self) -> None:
         config = ConfigParser()
@@ -149,6 +158,7 @@ class GenshinRichPresence():
         if not self.GIMI_DIRECTORY:
             raise(RuntimeError("You should set the GIMI_DIRECTORY path!"))
 
+
     def parse_match(self, match: re.Match) -> tuple[str, str, str]:
         character: str = match.group(1).split("\\")[1] # Possible "character", but could be something else
         refactoredchar: str = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
@@ -156,6 +166,7 @@ class GenshinRichPresence():
 
         self.logger.debug(f"POSSIBLE CHARACTER: {character}, {refactoredchar}, {match.group(0)}")
         return character, refactoredchar, asset
+
 
     def search_character(self, character: str, refactoredchar: str) -> None:
         for name in self.data:
@@ -165,6 +176,7 @@ class GenshinRichPresence():
                     self.updatable = True # FIXME Do not update instantly, wait if the character will change (Issue #17)
                     self.logger.debug(f"Updated last_char {self.last_char[1]}")
                     break
+
 
     def search_region(self, asset: str) -> None:
         for texture, value in self.world_data.items():
@@ -176,11 +188,12 @@ class GenshinRichPresence():
                 self.logger.debug(f"Updated region to {value[1]}, hash: {value[0]}")
                 break
 
+
     def parse_region(self) -> str:
         region: str = self.region
         region = region.capitalize()
-
         tmp = []
+
         for word in region.split("_"):
             tmp.append(word.capitalize())
 
@@ -190,7 +203,7 @@ class GenshinRichPresence():
     def update_rpc_details(self) -> None:
         if not self.details or not self.region:
             self.details = "On Menus"
-            return
+            return None
 
         if self.region == "liyue" and self.previous_region == "the_chasm":
             # Workaround: ensure the player's region is set to "The Chasm"  instead of "Liyue"
@@ -203,6 +216,7 @@ class GenshinRichPresence():
             self.last_region = [self.region, parsed_region]
 
         self.details = f"{'Inactive' if self.inactive else 'In-game'}. Exploring {self.last_region[1]}"
+
 
     async def update_rpc(self) -> None:
         self.check_changed_focus()
@@ -252,6 +266,7 @@ class GenshinRichPresence():
 
             await asyncio.sleep(self.LOG_TAIL_SLEEP_TIME)
 
+
     async def handle_log(self) -> None:
         self.logger.info("Initialize presence activity")
         await self.update_rpc()
@@ -261,7 +276,9 @@ class GenshinRichPresence():
 
         async for line in self.tail_file(text_wrapper):
             match: re.Match = compiled_regex.search(line)
-            if not match: continue
+            
+            if not match:
+                continue
 
             character, refactoredchar, asset = self.parse_match(match)
             self.search_character(character, refactoredchar)
@@ -277,7 +294,7 @@ class GenshinRichPresence():
         if not self.process:
             self.logger.info("Process not found. Exiting")
             os.system("pause")
-            return
+            return None
         
         self.logger.info(f"Process {self.process.pid} found. Starting RPC")
 
