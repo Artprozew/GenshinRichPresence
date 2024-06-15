@@ -1,64 +1,62 @@
 import os
 import json
 import logging
-from typing import Dict
+from configparser import ConfigParser
 
 import requests
+
+import config
+from data_handler import update_data
+
 
 
 def fetch_all_data() -> tuple[list[str], Dict[str, str]]:
     logger = logging.getLogger(__name__)
-    logger.info("Requesting data from API endpoint...")
+    logger.info("Requesting data from API endpoint")
 
-    data: list[str] = []
-    world_data: Dict[str, str] = {}
-
-    root_dir: os.PathLike = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    data_dir: os.PathLike = os.path.join(root_dir, "data")
-    characters_dir: os.PathLike = os.path.join(data_dir, "characters")
-    world_dir: os.PathLike = os.path.join(data_dir, "world")
-
-    json_file: os.PathLike = os.path.join(characters_dir, "characters_data.json")
+    world_data: dict[str, str] = {}
     request: requests.Response
-    do_request: bool = True
 
-    try:
-        request = requests.get("https://genshin.jmp.blue/characters/") # Tries to get the latest data from API
-    except requests.exceptions.RequestException:
-        do_request = False
+    if config.ALWAYS_CHECK_FOR_UPDATES:
+        response_error: bool = False
+        logger.info("Checking for the latest added characters")
 
-    if not os.path.exists(characters_dir):
-        logger.info(f'Directory "{characters_dir}" does not exists. Creating one...')
-        os.makedirs(characters_dir)
+        try:
+            # Get the latest characters from the GI-Model-Importer-Assets repository as they add new characters early
+            request = requests.get("https://api.github.com/repos/SilentNightSound/GI-Model-Importer-Assets/contents/PlayerCharacterData")
+        except requests.exceptions.RequestException:
+            response_error = True
 
-    if not do_request: # Backup that may be outdated
-        logger.info("Couldn't request data from API, getting from already existing file")
-        if os.path.exists(json_file):
-            with open(json_file, "r+") as file:
-                data = json.load(file)
-        else:
-            raise(RuntimeError("Couldn't get/request any data!"))
-    else:
-        data = json.loads(request.content)
+        if response_error or (request.status_code < 200 and request.status_code > 299):
+            logger.warning("Could not request data from the repository")
 
-    if "arataki-itto" in data:
-        data.remove("arataki-itto")
-        data.append("itto")
-    if "hu-tao" in data:
-        data.remove("hu-tao")
-        data.append("hutao")
+        if not response_error:
+            character_file: os.PathLike = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
+            data: list[str] = json.loads(request.content)
 
-    with open(json_file, "w+") as file: # May break with auto-py-to-exe?
-        logger.info("Dumping data to JSON file") # Saving latest data to JSON file
-        json.dump(data, file, ensure_ascii=False, indent=4)
+            if os.path.exists(character_file):
+                config_parser = ConfigParser()
+                config_parser.read(character_file)
 
+                for object in data:
+                    if not config_parser.has_section(f"TextureOverride{object["name"]}VertexLimitRaise"):
+                        while True:
+                            print(f"\nSeems like the character {object["name"]} was recently added to the game")
+                            update_confirm = input("Would you like to update its data? (Y/N) > ").lower()
+                            
+                            if update_confirm == "y" or update_confirm == "yes":
+                                update_data.update_character(object["name"])
+                                break
+                            elif update_confirm == "n" or update_confirm == "no":
+                                break
 
-    json_file: os.PathLike = os.path.join(world_dir, "world_data.json")
+    json_file: os.PathLike = os.path.join("data", "world", "world_data.json")
     if os.path.exists(json_file):
         with open(json_file, "r+") as file:
             world_data = json.load(file)
     else:
         raise(FileNotFoundError(f'File {json_file} does not exists!'))
 
+
     logger.info("Requests complete")
-    return data, world_data
+    return world_data
