@@ -15,6 +15,7 @@ import psutil
 from pypresence import Presence
 import win32gui
 
+import config
 from data_handler import fetch_data
 
 nest_asyncio.apply()
