@@ -4,13 +4,12 @@ from io import TextIOWrapper
 import logging
 import logging.config
 import os
-import re
 import sys
 import tempfile
 import time
 from typing import Optional, AsyncGenerator, Final, Dict, List
+from typing import Optional, AsyncGenerator
 
-import dotenv
 import nest_asyncio
 import psutil
 from pypresence import Presence
@@ -18,14 +17,9 @@ import win32gui
 
 from data_handler import fetch_data
 
-dotenv.load_dotenv()
 nest_asyncio.apply()
 
 class GenshinRichPresence():
-    GIMI_DIRECTORY: Final[os.PathLike] = os.getenv("GIMI_DIRECTORY")
-    RPC_UPDATE_RATE: Final[int] = int(os.getenv("RPC_UPDATE_RATE", 15)) # Can have problems with Discord updating it if its < 15
-    LOG_TAIL_SLEEP_TIME: Final[float] = float(os.getenv("LOG_TAIL_SLEEP_TIME", 1.5)) # Delay if new lines aren't found on the .log
-
     def __init__(self) -> None:
         if os.path.exists("logging.conf"):
             logging.config.fileConfig("logging.conf")
@@ -38,29 +32,27 @@ class GenshinRichPresence():
         self.logger: logging.Logger = logging.getLogger(__name__)
 
         self.rpc: Presence = Presence(
-            int(os.getenv("APP_ID", 1234834454569025538)),
+            config.APP_ID,
             loop=asyncio.new_event_loop(),
         )
         self.process: Optional[psutil.Process] = None
 
-        self.last_char: List[str, str] = ["", "Unknown"]
-        self.region: Optional[str] = None
+        self.current_character: str = "Unknown"
+        self.current_region: Optional[str] = None
         self.previous_region: Optional[str] = None
-        self.last_region: List[Optional[str], Optional[str]] = [None, None]
         
-        self.last_update: float = time.time() + self.RPC_UPDATE_RATE
+        self.last_update: float = time.time() + config.RPC_UPDATE_RATE
         self.updatable: bool = True
-        self.inactive: bool = True
+        self.is_inactive: bool = True
         
         self.details: Optional[str] = None
         self.small_image: str = "unknown"
 
-        self.data: List[str]
-        self.world_data: Dict[str, str]
+        self.world_data: dict[str, str]
 
 
     def can_update_rpc(self) -> bool:
-        if (time.time() - self.last_update) > self.RPC_UPDATE_RATE:
+        if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:
             self.check_changed_focus()
             return self.updatable
 
@@ -70,17 +62,17 @@ class GenshinRichPresence():
         self.last_update = time.time()
 
     def check_changed_focus(self) -> bool:
-        changed: bool = self.inactive
+        changed: bool = self.is_inactive
 
         if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":
-            self.inactive = False
+            self.is_inactive = False
         else:
-            self.inactive = True
+            self.is_inactive = True
 
-        changed = changed != self.inactive
+        changed = changed != self.is_inactive
         if changed:
             self.updatable = True
-            self.logger.debug(f"Changed inactive status to {self.inactive}")
+            self.logger.debug(f"Changed inactive status to {self.is_inactive}")
 
         return changed
 
@@ -105,90 +97,55 @@ class GenshinRichPresence():
     def open_log_file(self) -> TextIOWrapper:
         self.logger.info("Opening log file")
 
-        log_file = os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")
+        log_file = os.path.join(config.GIMI_DIRECTORY, "d3d11_log.txt")
         if not os.path.exists(log_file):
             raise(FileNotFoundError(f'The file "{log_file}" could not be found'))
         
         wrapper = open(log_file, 'r')
         return wrapper
 
-    def save_ini_file(self, config, ini_file) -> None:
+
+    def save_ini_file(self, config_parser: ConfigParser, ini_file) -> None:
         if not os.path.exists(os.path.dirname(ini_file)):
             os.mkdir(os.path.dirname(ini_file))
 
-        if not config.has_option("SETTINGS", "GIMI_DIRECTORY"):
-            config.add_section("SETTINGS")
-        config["SETTINGS"]["GIMI_DIRECTORY"] = self.GIMI_DIRECTORY
+        if not config_parser.has_section("SETTINGS"):
+            config_parser.add_section("SETTINGS")
+        config_parser["SETTINGS"]["GIMI_DIRECTORY"] = config.GIMI_DIRECTORY
 
         with open(ini_file, "w") as file:
-            config.write(file)
+            config_parser.write(file)
+
 
     def check_gimi_dir(self) -> None:
-        config = ConfigParser()
+        config_parser = ConfigParser()
         ini_file = f"{tempfile.gettempdir()}\\GenshinRichPresence\\config.ini"
 
         if not os.path.exists(ini_file):
             print("Please write here your GIMI directory path")
-            self.GIMI_DIRECTORY = input("Path > ")
-            self.save_ini_file(config, ini_file)
+            config.GIMI_DIRECTORY = input("Path > ")
+            self.save_ini_file(config_parser, ini_file)
         else:
-            config.read(ini_file)
-            self.GIMI_DIRECTORY = config.get("SETTINGS", "GIMI_DIRECTORY")
+            config_parser.read(ini_file)
+            config.GIMI_DIRECTORY = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
 
-            print(f"GIMI directory found: {self.GIMI_DIRECTORY}\nPress ENTER if you wanna keep it."
+            print(f"\nGIMI directory found: {config.GIMI_DIRECTORY}\nPress ENTER if you wanna keep it."
             " Otherwise, write the new directory")
             answer = input(" > ")
 
             if not answer:
-                config.read(ini_file)
-                self.GIMI_DIRECTORY = config.get("SETTINGS", "GIMI_DIRECTORY")
+                config_parser.read(ini_file)
+                config.GIMI_DIRECTORY = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
             else:
-                self.GIMI_DIRECTORY = answer
-                self.save_ini_file(config, ini_file)
+                config.GIMI_DIRECTORY = answer
+                self.save_ini_file(config_parser, ini_file)
 
-        if not self.GIMI_DIRECTORY:
+        if not config.GIMI_DIRECTORY:
             raise(RuntimeError("You should set the GIMI_DIRECTORY path!"))
-
-    def parse_match(self, match: re.Match) -> tuple[str, str, str]:
-        character: str = match.group(1).split("\\")[1] # Possible "character", but could be something else
-        refactoredchar: str = character.lower().replace(" ", "-") # Data uses "-" instead of "_"
-        asset: str = f"TextureOverride{match.group(1).split('\\')[3]}"
-
-        self.logger.debug(f"POSSIBLE CHARACTER: {character}, {refactoredchar}, {match.group(0)}")
-        return character, refactoredchar, asset
-
-    def search_character(self, character: str, refactoredchar: str) -> None:
-        for name in self.data:
-            if name.lower().startswith(refactoredchar): # Character confirmed
-                if self.last_char[0] != refactoredchar: # Check if it's not the current character
-                    self.last_char = [refactoredchar, character]
-                    self.updatable = True # FIXME Do not update instantly, wait if the character will change (Issue #17)
-                    self.logger.debug(f"Updated last_char {self.last_char[1]}")
-                    break
-
-    def search_region(self, asset: str) -> None:
-        for texture, value in self.world_data.items():
-            if texture == asset:
-                if self.previous_region != self.region:
-                    self.previous_region = self.region
-                self.region = value[1]
-                self.updatable = True
-                self.logger.debug(f"Updated region to {value[1]}, hash: {value[0]}")
-                break
-
-    def parse_region(self) -> str:
-        region: str = self.region
-        region = region.capitalize()
-
-        tmp = []
-        for word in region.split("_"):
-            tmp.append(word.capitalize())
-
-        return " ".join(tmp)
 
 
     def update_rpc_details(self) -> None:
-        if not self.details or not self.region:
+        if not self.details or not self.current_region:
             self.details = "On Menus"
             return
 
@@ -196,29 +153,25 @@ class GenshinRichPresence():
             # Workaround: ensure the player's region is set to "The Chasm"  instead of "Liyue"
             # But, it will still report "The Chasm" if the player teleports FROM The Chasm to Liyue.
             self.logger.debug("Setting region as the_chasm because of previous region")
-            self.region = "the_chasm"
+        current_region_name = " ".join([word.capitalize() for word in self.current_region.split("_")])
+        player_is_inactive = "Inactive" if self.is_inactive else "In-game"
         
-        if self.region != self.last_region[0]: # If the parsed region name is not already saved in memory
-            parsed_region = self.parse_region()
-            self.last_region = [self.region, parsed_region]
+        self.details = f"{player_is_inactive}. Exploring {current_region_name}"
+        return None
 
-        self.details = f"{'Inactive' if self.inactive else 'In-game'}. Exploring {self.last_region[1]}"
 
     async def update_rpc(self) -> None:
         self.check_changed_focus()
         self.update_rpc_details()
 
-        if self.last_char[0]:
-            self.small_image = self.last_char[0].replace("-", "_")
-
         self.rpc.update(
             start=self.process.create_time(),
-            state=f"Playing as {self.last_char[1]}",
+            state=f"Playing as {self.current_character}",
             details=self.details,
             large_image="genshin",
             small_image=self.small_image,
             large_text="Genshin Impact",
-            small_text=self.last_char[1],
+            small_text=self.current_character,
             )
 
         self.set_last_update()
@@ -226,8 +179,7 @@ class GenshinRichPresence():
         self.logger.debug("RPC Updated")
 
 
-    async def tail_file(self, file: TextIOWrapper) -> AsyncGenerator[str, None]:
-        size: int = os.stat(os.path.join(self.GIMI_DIRECTORY, "d3d11_log.txt")).st_size
+        size: int = os.stat(os.path.join(config.GIMI_DIRECTORY, "d3d11_log.txt")).st_size
         file.seek(os.SEEK_SET)
         if size > 5000000:
             file.seek(size - 5000000, os.SEEK_SET) # Reads the last 5MB
@@ -250,22 +202,47 @@ class GenshinRichPresence():
             if self.can_update_rpc():
                 await self.update_rpc()
 
-            await asyncio.sleep(self.LOG_TAIL_SLEEP_TIME)
+            await asyncio.sleep(config.LOG_TAIL_SLEEP_TIME)
+
 
     async def handle_log(self) -> None:
         self.logger.info("Initialize presence activity")
         await self.update_rpc()
 
-        text_wrapper: TextIOWrapper = self.open_log_file()
-        compiled_regex: re.Pattern = re.compile(r"TextureOverride\\Mods(.+) matched resource with hash=([a-zA-Z0-9_.-]*)")
+        log_text_wrapper: TextIOWrapper = self.open_log_file()
 
-        async for line in self.tail_file(text_wrapper):
-            match: re.Match = compiled_regex.search(line)
-            if not match: continue
+        async for line in self.tail_file(log_text_wrapper):
+            # Check for the lines we need
+            if not "TextureOverride" in line:
+                continue
+            if not "\\RichPresenceData\\" in line:
+                continue
 
-            character, refactoredchar, asset = self.parse_match(match)
-            self.search_character(character, refactoredchar)
-            self.search_region(asset)
+            # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\LumitoileIB matched (...) OR
+            # TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\ClorindeVertexLimitRaise matched (...)
+            line_match_list = line.split('PlayableCharacterData.ini\\')
+
+            # Check if line references a character OR world .ini file 
+            if len(line_match_list) > 1:
+                # Ignore everything after "VertexLimitRaise" and keep just the character name
+                character = line_match_list[1].split("VertexLimitRaise")[0]
+
+                if self.current_character != character:
+                    self.current_character = character
+                    self.updatable = True
+                    self.logger.debug(f"Updated current_character to {self.current_character}")
+            else:
+                # Get and concatenate just the texture text after the .ini file
+                asset = f"TextureOverride{line_match_list[0].split("WorldData.ini\\")[1].split(" ")[0]}"
+                new_region = self.world_data[asset][1]
+
+                if self.current_region != new_region:
+                    # Store the "current" region into the previous_region
+                    self.previous_region = self.current_region
+
+                    self.current_region = new_region
+                    self.updatable = True
+                    self.logger.debug(f"Updated region to {self.current_region}, hash: {self.world_data[asset][0]}")
 
 
     def main(self) -> None:
