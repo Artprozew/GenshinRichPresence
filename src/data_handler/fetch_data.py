@@ -9,8 +9,18 @@ import config
 from data_handler import update_data
 
 
+def fetch_all_data() -> dict[str, list[str, str]]:
+    """Fetches character and/or world data
 
-def fetch_all_data() -> tuple[list[str], Dict[str, str]]:
+    Checks updates for the latest character data from an API if necessary and opted-in
+
+    Returns:
+        dict: A dictionary containing world data in this form:
+            key (str): Texture override name\n
+            value (list): A list with two elements:\n
+                - texture hash (str)
+                - region name (str)
+    """
     logger = logging.getLogger(__name__)
     logger.info("Requesting data from API endpoint")
 

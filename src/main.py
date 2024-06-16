@@ -1,19 +1,18 @@
 import asyncio
-from configparser import ConfigParser
-from io import TextIOWrapper
 import logging
 import logging.config
 import os
 import sys
 import tempfile
 import time
-from typing import Optional, AsyncGenerator, Final, Dict, List
+from configparser import ConfigParser
+from io import TextIOWrapper
 from typing import Optional, AsyncGenerator
 
 import nest_asyncio
 import psutil
-from pypresence import Presence
 import win32gui
+from pypresence import Presence
 
 import config
 from data_handler import fetch_data
@@ -59,8 +58,10 @@ class GenshinRichPresence():
 
         return False
 
+
     def set_last_update(self) -> None:
         self.last_update = time.time()
+
 
     def check_changed_focus(self) -> bool:
         changed: bool = self.is_inactive
@@ -77,6 +78,7 @@ class GenshinRichPresence():
 
         return changed
 
+
     def get_process(self) -> psutil.Process | None:
         self.logger.info("Searching for process")
 
@@ -86,14 +88,18 @@ class GenshinRichPresence():
 
         return None
     
+
     def handle_exceptions(self, exc_type, exc_value, tb) -> None:
         import traceback
+
         with open(f"{tempfile.gettempdir()}\\GenshinRichPresence\\traceback.txt", "w") as file:
             for line in traceback.format_exception(exc_type, exc_value, tb):
                 file.writelines(line)
+
         traceback.print_exception(exc_type, exc_value, tb)
         os.system("pause")
         sys.exit(-1)
+
 
     def open_log_file(self) -> TextIOWrapper:
         self.logger.info("Opening log file")
@@ -123,7 +129,7 @@ class GenshinRichPresence():
         ini_file = f"{tempfile.gettempdir()}\\GenshinRichPresence\\config.ini"
 
         if not os.path.exists(ini_file):
-            print("Please write here your GIMI directory path")
+            print("\nPlease write here your GIMI directory path")
             config.GIMI_DIRECTORY = input("Path > ")
             self.save_ini_file(config_parser, ini_file)
         else:
@@ -148,12 +154,16 @@ class GenshinRichPresence():
     def update_rpc_details(self) -> None:
         if not self.details or not self.current_region:
             self.details = "On Menus"
-            return
-
-        if self.region == "liyue" and self.previous_region == "the_chasm":
-            # Workaround: ensure the player's region is set to "The Chasm"  instead of "Liyue"
-            # But, it will still report "The Chasm" if the player teleports FROM The Chasm to Liyue.
+            return None
+        
+        # This is a workaround: When the player teleports to The Chasm, the log will report that region for us.
+        # But after some time, it will report the region as Liyue, even if the player is still in The Chasm.
+        # Further info refer to issue #27
+        if self.current_region == "liyue" and self.previous_region == "the_chasm":
             self.logger.debug("Setting region as the_chasm because of previous region")
+            self.current_region = "the_chasm"
+
+        # Capitalize and remove underscore from the region name
         current_region_name = " ".join([word.capitalize() for word in self.current_region.split("_")])
         player_is_inactive = "Inactive" if self.is_inactive else "In-game"
         
@@ -180,16 +190,21 @@ class GenshinRichPresence():
         self.logger.debug("RPC Updated")
 
 
+    async def tail_file(self, file: TextIOWrapper) -> AsyncGenerator[str]:
+        # Gets the size of the log file
         size: int = os.stat(os.path.join(config.GIMI_DIRECTORY, "d3d11_log.txt")).st_size
+        
+        # Sets the cursor to read the latest 5MB of data
         file.seek(os.SEEK_SET)
         if size > 5000000:
-            file.seek(size - 5000000, os.SEEK_SET) # Reads the last 5MB
+            file.seek(size - 5000000, os.SEEK_SET)
 
         last_position: int = file.tell()
         line: str = ''
 
         self.logger.info("Running log file tail loop")
         self.logger.info("Your activity will now be updated accordingly")
+
         while True:
             file.seek(last_position)
             line = file.readline()
@@ -253,9 +268,9 @@ class GenshinRichPresence():
 
         self.process = self.get_process()
         if not self.process:
-            self.logger.info("Process not found. Exiting")
+            self.logger.warning("Process not found. Exiting")
             os.system("pause")
-            return
+            return None
         
         self.logger.info(f"Process {self.process.pid} found. Starting RPC")
 
@@ -263,8 +278,11 @@ class GenshinRichPresence():
         self.rpc.connect()
         self.logger.info("Connected")
 
-        self.data, self.world_data = fetch_data.fetch_all_data()
+        self.logger.info("Fetching data")
+        self.world_data = fetch_data.fetch_all_data()
         asyncio.get_event_loop().run_until_complete(self.handle_log())
+
+        return None
 
 
 if __name__ == "__main__":
