@@ -3,12 +3,12 @@ name = "GenshinRichPresence"
 version = "0.1.1-beta"
 description = "Discord Rich Presence for Genshin Impact"
 authors = ["Artprozew <artprozew@gmail.com>"]
-license = "LGPL 2.1"
+license = "MIT"
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.9"
 requests = "^2.31.0"
 pywin32 = "^306"
 pypresence = "^4.3.0"
