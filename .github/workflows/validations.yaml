@@ -4,7 +4,7 @@ on: [pull_request, push]
 
 jobs:
   validate-vermin:
-    name: vermin for v${{ matrix.python-version }} / ${{ runner.os }}
+    name: vermin for v${{ matrix.python-version }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -28,7 +28,7 @@ jobs:
           --eval-annotations --backport asyncio --backport configparser --backport typing
 
   type-check-mypy:
-    name: mypy for v${{ matrix.python-version }} / ${{ runner.os }}
+    name: mypy for v${{ matrix.python-version }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -50,7 +50,7 @@ jobs:
         run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
 
   lint-flake8:
-    name: flake8 for v${{ matrix.python-version }} / ${{ runner.os }}
+    name: flake8 for v${{ matrix.python-version }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -72,7 +72,7 @@ jobs:
         run: flake8 src
 
   lint-black:
-    name: black for v${{ matrix.python-version }} / ${{ runner.os }}
+    name: black for v${{ matrix.python-version }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
