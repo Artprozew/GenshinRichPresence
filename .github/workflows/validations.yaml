@@ -9,7 +9,7 @@ strategy:
     os: [ubuntu-latest, windows-latest]
 
 jobs:
-  validate:
+  validate-vermin:
     steps:
       - name: Validate Python version ${{ matrix.python-version }} (vermin)
         uses: ./.github/workflows/install-dependencies.yaml
@@ -17,7 +17,7 @@ jobs:
           python-version: '${{ matrix.python-version }}'
         run: vermin -t=${{ matrix.python-version }} --violations --eval-annotations --backport asyncio --backport configparser --backport typing
 
-  type-check:
+  type-check-mypy:
     steps:
       - name: Run mypy type-checking
         uses: ./.github/workflows/install-dependencies.yaml
@@ -25,14 +25,18 @@ jobs:
           python-version: '${{ matrix.python-version }}'
         run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
 
-  lint:
+  lint-flake8:
     steps:
-      - uses: ./.github/workflows/install-dependencies.yaml
+      - name: Run flake8 linting
+        uses: ./.github/workflows/install-dependencies.yaml
         with:
           python-version: '${{ matrix.python-version }}'
-
-      - name: Run flake8 linting
         run: flake8 src
 
+  lint-black:
+    steps:
       - name: Run black linting
+        uses: ./.github/workflows/install-dependencies.yaml
+        with:
+          python-version: '${{ matrix.python-version }}'
         run: black src --check --diff --color
