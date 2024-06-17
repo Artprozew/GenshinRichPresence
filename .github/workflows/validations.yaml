@@ -1,0 +1,32 @@
+name: Validate Python version, linting and type-checking
+
+on: [pull_request, push]
+
+jobs:
+  runs-on: ubuntu-latest
+
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Python v3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+        cache: "pip"
+      run: pip install -r requirements.txt
+
+    - name: Validate Python version 3.9 (vermin)
+      run: vermin -t=3.9 --violations --eval-annotations --backport asyncio --backport configparser --backport typing
+
+    - name: Run mypy type-checking
+      run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
+
+    - name: Run flake8 linting
+      run: flake8
+
+    - name: Run black linting
+      uses: psf/black@stable
+      with:
+        options: "--check --color --diff"
+        src: "./src"
+        use_pyproject: true
