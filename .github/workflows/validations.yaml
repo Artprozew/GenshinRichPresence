@@ -2,31 +2,37 @@ name: Validate Python version, linting and type-checking
 
 on: [pull_request, push]
 
+runs-on: ${{ matrix.os }}
+strategy:
+  matrix:
+    python-version: ['3.9', '3.12']
+    os: [ubuntu-latest, windows-latest]
+
 jobs:
-  runs-on: ubuntu-latest
+  validate:
+    steps:
+      - name: Validate Python version ${{ matrix.python-version }} (vermin)
+        uses: ./.github/workflows/install-dependencies.yaml
+        with:
+          python-version: '${{ matrix.python-version }}'
+        run: vermin -t=${{ matrix.python-version }} --violations --eval-annotations --backport asyncio --backport configparser --backport typing
 
-  steps:
-    - uses: actions/checkout@v3
+  type-check:
+    steps:
+      - name: Run mypy type-checking
+        uses: ./.github/workflows/install-dependencies.yaml
+        with:
+          python-version: '${{ matrix.python-version }}'
+        run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
 
-    - name: Setup Python v3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.9"
-        cache: "pip"
-      run: pip install -r requirements.txt
+  lint:
+    steps:
+      - uses: ./.github/workflows/install-dependencies.yaml
+        with:
+          python-version: '${{ matrix.python-version }}'
 
-    - name: Validate Python version 3.9 (vermin)
-      run: vermin -t=3.9 --violations --eval-annotations --backport asyncio --backport configparser --backport typing
+      - name: Run flake8 linting
+        run: flake8 src
 
-    - name: Run mypy type-checking
-      run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
-
-    - name: Run flake8 linting
-      run: flake8
-
-    - name: Run black linting
-      uses: psf/black@stable
-      with:
-        options: "--check --color --diff"
-        src: "./src"
-        use_pyproject: true
+      - name: Run black linting
+        run: black src --check --diff --color
