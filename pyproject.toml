@@ -16,11 +16,23 @@ psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 python-dotenv = "^1.0.1"
 
-
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.10.0"
 black = "^24.4.2"
 flake8 = "^7.0.0"
+vermin = "^1.6.0"
+pre-commit = "^3.7.1"
+commitizen = "^3.27.0"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "semver2"
+version_provider = "poetry"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
 
 [build-system]
 requires = ["poetry-core"]
