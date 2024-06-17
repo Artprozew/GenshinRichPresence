@@ -1,42 +1,94 @@
-name: Validate Python version, linting and type-checking
+name: Checks
 
 on: [pull_request, push]
 
-runs-on: ${{ matrix.os }}
-strategy:
-  matrix:
-    python-version: ['3.9', '3.12']
-    os: [ubuntu-latest, windows-latest]
-
 jobs:
   validate-vermin:
+    name: vermin for v${{ matrix.python-version }} / ${{ runner.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+        os: [ubuntu-latest, windows-latest]
+
     steps:
-      - name: Validate Python version ${{ matrix.python-version }} (vermin)
-        uses: ./.github/workflows/install-dependencies.yaml
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+
+      - name: Install Python v${{ matrix.python-version }} dependencies
+        uses: actions/setup-python@v5.1.0
         with:
           python-version: '${{ matrix.python-version }}'
-        run: vermin -t=${{ matrix.python-version }} --violations --eval-annotations --backport asyncio --backport configparser --backport typing
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Validate Python version v${{ matrix.python-version }} (vermin)
+        run: |
+          vermin -t=${{ matrix.python-version }} --violations
+          --eval-annotations --backport asyncio --backport configparser --backport typing
 
   type-check-mypy:
+    name: mypy for v${{ matrix.python-version }} / ${{ runner.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+        os: [ubuntu-latest, windows-latest]
+
     steps:
-      - name: Run mypy type-checking
-        uses: ./.github/workflows/install-dependencies.yaml
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+
+      - name: Install Python v${{ matrix.python-version }} dependencies
+        uses: actions/setup-python@v5.1.0
         with:
           python-version: '${{ matrix.python-version }}'
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Type-check for v${{ matrix.python-version }} (mypy)
         run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
 
   lint-flake8:
+    name: flake8 for v${{ matrix.python-version }} / ${{ runner.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+        os: [ubuntu-latest, windows-latest]
+
     steps:
-      - name: Run flake8 linting
-        uses: ./.github/workflows/install-dependencies.yaml
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+
+      - name: Install Python v${{ matrix.python-version }} dependencies
+        uses: actions/setup-python@v5.1.0
         with:
           python-version: '${{ matrix.python-version }}'
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Lint for v${{ matrix.python-version }} (flake8)
         run: flake8 src
 
   lint-black:
+    name: black for v${{ matrix.python-version }} / ${{ runner.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+        os: [ubuntu-latest, windows-latest]
+
     steps:
-      - name: Run black linting
-        uses: ./.github/workflows/install-dependencies.yaml
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+
+      - name: Install Python v${{ matrix.python-version }} dependencies
+        uses: actions/setup-python@v5.1.0
         with:
           python-version: '${{ matrix.python-version }}'
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Lint for v${{ matrix.python-version }} (black)
         run: black src --check --diff --color
