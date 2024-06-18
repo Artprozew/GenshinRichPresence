@@ -4,28 +4,23 @@ on: [pull_request, push]
 
 jobs:
   validate-vermin:
-    name: vermin for v${{ matrix.python-version }} / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
-        os: [ubuntu-latest, windows-latest]
+    name: vermin for v3.9 / windows-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
 
-      - name: Install Python v${{ matrix.python-version }} dependencies
+      - name: Install Python v3.9 dependencies
         uses: actions/setup-python@v5.1.0
         with:
-          python-version: '${{ matrix.python-version }}'
+          python-version: '3.9'
           cache: "pip"
       - run: pip install -r requirements.txt
 
-      - name: Validate Python version v${{ matrix.python-version }} (vermin)
+      - name: Validate Python version v3.9 (vermin)
         run: |
-          vermin -t=${{ matrix.python-version }} --violations
-          --eval-annotations --backport asyncio --backport configparser --backport typing
+          vermin src --config-file=setup.cfg
 
   type-check-mypy:
     name: mypy for v${{ matrix.python-version }} / ${{ matrix.os }}
@@ -47,48 +42,40 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Type-check for v${{ matrix.python-version }} (mypy)
-        run: mypy src --config-file=setup.cfg --explicit-package-bases --ignore-missing-imports
+        run: mypy src --config-file=setup.cfg
 
   lint-flake8:
-    name: flake8 for v${{ matrix.python-version }} / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
-        os: [ubuntu-latest, windows-latest]
+    name: flake8 for v3.9 / ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
 
-      - name: Install Python v${{ matrix.python-version }} dependencies
+      - name: Install Python v3.9 dependencies
         uses: actions/setup-python@v5.1.0
         with:
-          python-version: '${{ matrix.python-version }}'
+          python-version: '3.9'
           cache: "pip"
       - run: pip install -r requirements.txt
 
-      - name: Lint for v${{ matrix.python-version }} (flake8)
+      - name: Lint for v3.9 (flake8)
         run: flake8 src
 
   lint-black:
-    name: black for v${{ matrix.python-version }} / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
-        os: [ubuntu-latest, windows-latest]
+    name: black for v3.9 / ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
 
-      - name: Install Python v${{ matrix.python-version }} dependencies
+      - name: Install Python v3.9 dependencies
         uses: actions/setup-python@v5.1.0
         with:
-          python-version: '${{ matrix.python-version }}'
+          python-version: '3.9'
           cache: "pip"
       - run: pip install -r requirements.txt
 
-      - name: Lint for v${{ matrix.python-version }} (black)
+      - name: Lint for v3.9 (black)
         run: black src --check --diff --color

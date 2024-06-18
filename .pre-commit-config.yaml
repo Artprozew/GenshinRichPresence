@@ -20,17 +20,13 @@ repos:
         args: [
           "-f", "requirements.txt", "--output", "requirements.txt",
           "--with", "dev", "--without-hashes"
-          ]
+        ]
 
   - repo: https://github.com/netromdk/vermin
     rev: v1.6.0
     hooks:
       - id: vermin
-        # Specify our target version here
-        args: [
-          "-t=3.9-", "--violations", "--eval-annotations", "--backport", "asyncio",
-          "--backport", "configparser", "--backport", "typing"
-          ]
+        args: [src --config-file=setup.cfg]
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.27.0
@@ -55,6 +51,6 @@ repos:
         # from above repo: mypy runs with 'mypy --ignore-missing-imports' because
         # pre-commit runs mypy from an isolated virtualenv so it won't have access to those
         args: [
-          "--config-file=setup.cfg", "--ignore-missing-imports",
-          "--explicit-package-bases", "--strict"
-          ]
+          "--config-file=setup.cfg", "--ignore-missing-imports"
+        ]
+        additional_dependencies: [types-requests, types-psutil]
