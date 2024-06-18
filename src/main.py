@@ -17,6 +17,11 @@ from pypresence import Presence
 import config
 from data_handler import fetch_data
 
+try:
+    import win32gui
+except ImportError:
+    pass
+
 nest_asyncio.apply()
 
 class GenshinRichPresence():
