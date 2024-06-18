@@ -231,12 +231,12 @@ class GenshinRichPresence:
 
             # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\LumitoileIB matched (...) OR
             # TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\ClorindeVertexLimitRaise matched (...)
-            line_match_list = line.split("PlayableCharacterData.ini\\")
+            line_match_list: list[str] = line.split("PlayableCharacterData.ini\\")
 
             # Check if line references a character OR world .ini file
             if len(line_match_list) > 1:
                 # Ignore everything after "VertexLimitRaise" and keep just the character name
-                character = line_match_list[1].split("VertexLimitRaise")[0]
+                character: str = line_match_list[1].split("VertexLimitRaise")[0]
 
                 if self.current_character != character:
                     self.current_character = character
@@ -244,9 +244,8 @@ class GenshinRichPresence:
                     self.logger.debug(f"Updated current_character to {self.current_character}")
             else:
                 # Get and concatenate just the texture text after the .ini file
-                asset: str = (
-                    f"TextureOverride{line_match_list[0].split('WorldData.ini\\')[1].split(' ')[0]}"
-                )
+                asset: str = line_match_list[0].split("WorldData.ini\\")[1].split(" ")[0]
+                asset = f"TextureOverride{asset}"
                 new_region: str = self.world_data[asset][1]
 
                 if self.current_region != new_region:
