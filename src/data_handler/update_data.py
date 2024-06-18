@@ -1,8 +1,10 @@
 import os
-import requests
 import json
+import sys
 from configparser import ConfigParser
 from typing import Optional
+
+import requests
 
 standalone: bool = False
 
@@ -14,20 +16,22 @@ except ImportError:
 
 def update_character(name: str) -> bool:
     """Gets the latest character data from GI-Model-Importer-Assets repository and writes it in the .ini file.
-    
+
     Parameters:
         name (str): The name of the character to get data from
 
     Returns:
         bool: Returns False if anything fails, True otherwise
     """
-    request = requests.get(f"https://raw.githubusercontent.com/SilentNightSound/GI-Model-Importer-Assets/main/PlayerCharacterData/{name}/hash.json")
+    request = requests.get(
+        f"https://raw.githubusercontent.com/SilentNightSound/GI-Model-Importer-Assets/main/PlayerCharacterData/{name}/hash.json"
+    )
 
     if request.status_code != 200:
         print(f"Something went wrong!\nStatus code: {request.status_code}: {request.reason}")
         os.system("pause")
         return False
-    
+
     if config.GRP_DATA_DIRECTORY:
         ini_file = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
         config_parser = ConfigParser()
@@ -36,7 +40,7 @@ def update_character(name: str) -> bool:
         texture_name = f"TextureOverride{name}VertexLimitRaise"
         if config_parser.has_section(texture_name):
             print(f"The character {name} is already added!")
-            
+
             os.system("pause")
             return False
 
@@ -58,53 +62,62 @@ def update_character(name: str) -> bool:
 
     print(f'Character "{name}" added')
     return True
- 
 
-def main():
+
+def main() -> None:
     """Used as standalone script to update EVERY character data in the RichPresenceData.ini file.
 
-    ## This function will erase and rewrite all existing data in the file. 
+    ## This function will erase and rewrite all existing data in the file.
     """
     if not config.GRP_DATA_DIRECTORY:
-        config.GRP_DATA_DIRECTORY = input("\nPlease write here the path to the RichPresenceData in your GIMI Mods folder > ")
-    
+        config.GRP_DATA_DIRECTORY = input(
+            "\nPlease write here the path to the RichPresenceData in your GIMI Mods folder > "
+        )
+
     if not os.path.exists(config.GRP_DATA_DIRECTORY):
         print("Could not locate the folder")
-        return False
-    
+        return None
+
     while True:
-        print("\nThis will completely erase and rewrite your .ini file with the most recent data. It may also take a while (~3 min).")
+        print(
+            "\nThis will completely erase and rewrite your .ini file with the most recent data.\
+              It may also take a while (~3 min)."
+        )
         response = input("Would you like to proceed? (Y/N) > ").lower()
         if response == "n" or response == "no":
-            return True
+            return None
         elif response == "y" or response == "yes":
             break
-    
-    ini_file: os.PathLike = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
+
+    ini_file: str = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
 
     if os.path.isfile(ini_file):
         os.remove(ini_file)
 
-    request = requests.get("https://api.github.com/repos/SilentNightSound/GI-Model-Importer-Assets/contents/PlayerCharacterData")
+    request = requests.get(
+        "https://api.github.com/repos/SilentNightSound/GI-Model-Importer-Assets/contents/PlayerCharacterData"
+    )
 
     if request.status_code != 200:
         print(f"Something went wrong!\nStatus code: {request.status_code}: {request.reason}")
         os.system("pause")
-        return False
+        return None
 
     data = json.loads(request.content)
 
     for object in data:
         update_character(object["name"])
 
-    return True
+    return None
 
 
 # If used as standalone script
 if __name__ == "__main__":
     if standalone:
         # Inoffensive workaround? :)
-        class config:
-            GRP_DATA_DIRECTORY: Optional[os.PathLike] = None
+        if "config" not in sys.modules:
+
+            class config:  # type: ignore # noqa F811
+                GRP_DATA_DIRECTORY: Optional[str] = None
 
     main()
