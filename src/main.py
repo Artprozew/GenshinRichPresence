@@ -16,7 +16,7 @@ from pypresence import Presence  # type: ignore[import-untyped] # No stub files?
 import config
 from data_handler import fetch_data
 
-# Windows-only: this specific if may not trigger mypy based on OS
+# Windows-only
 if sys.platform == "win32":
     import win32gui
 
@@ -67,7 +67,7 @@ class GenshinRichPresence:
     def check_changed_focus(self) -> bool:
         changed: bool = self.is_inactive
 
-        if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":
+        if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":  # type: ignore[name-defined] # Temp workaround
             self.is_inactive = False
         else:
             self.is_inactive = True
