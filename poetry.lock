@@ -816,6 +816,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pywin32"
+version = "306.0.0.20240408"
+description = "Typing stubs for pywin32"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-pywin32-306.0.0.20240408.tar.gz", hash = "sha256:706d8d4f1e796cd611e97d4772aaab36bddb01a829783ec11bd64f629df5fe3b"},
+    {file = "types_pywin32-306.0.0.20240408-py3-none-any.whl", hash = "sha256:147466069d4c51a4a25e9fe380bf3ad9511ffb3c877d33a311e13fa38a6340bf"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20240602"
 description = "Typing stubs for requests"
@@ -917,4 +928,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "0a5941c9b8ec73e7ff88cb8649a4ddac96264b50b09cdc877e0420a0448fa88b"
+content-hash = "e4e24dc0299199027b5a12d9f20f72529e49a10822bb70de70d003d7de395b37"
