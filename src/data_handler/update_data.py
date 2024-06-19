@@ -68,20 +68,18 @@ def main() -> None:
     ## This function will erase and rewrite all existing data in the file.
     """
     if not config.GRP_DATA_DIRECTORY:
-        config.GRP_DATA_DIRECTORY = input(
-            "\nPlease write here the path to the RichPresenceData in your GIMI Mods folder > "
-        )
+        print("\nPlease write here the path to the RichPresenceData in your GIMI Mods folder")
+        config.GRP_DATA_DIRECTORY = input(" > ")
 
     if not os.path.exists(config.GRP_DATA_DIRECTORY):
         print("Could not locate the folder")
+        os.system("pause")
         return None
 
     while True:
-        print(
-            "\nThis will completely erase and rewrite your .ini file with the most recent data.\
-              It may also take a while (~3 min)."
-        )
-        response = input("Would you like to proceed? (Y/N) > ").lower()
+        print("\nThis will completely erase and rewrite your .ini file with the most recent data.")
+        print("It may also take a while (~3 min). Would you like to proceed? (Y/N)")
+        response = input(" > ").lower()
         if response == "n" or response == "no":
             return None
         elif response == "y" or response == "yes":

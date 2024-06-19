@@ -48,7 +48,8 @@ def check_characters_updates() -> None:
 
         while True:
             print(f"\nSeems like the character {obj['name']} was recently added to the game")
-            update_confirm = input("Would you like to update its data? (Y/N) > ").lower()
+            print("Would you like to update its data? (Y/N)")
+            update_confirm = input(" > ").lower()
 
             if update_confirm == "y" or update_confirm == "yes":
                 update_data.update_character(obj["name"])

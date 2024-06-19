@@ -126,16 +126,14 @@ class GenshinRichPresence:
 
         if not os.path.exists(ini_file):
             print("\nPlease write here your GIMI directory path")
-            config.GIMI_DIRECTORY = input("Path > ")
+            config.GIMI_DIRECTORY = input(" > ")
             self.save_ini_file(config_parser, ini_file)
         else:
             config_parser.read(ini_file)
             config.GIMI_DIRECTORY = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
 
-            print(
-                f"\nGIMI directory found: {config.GIMI_DIRECTORY}\n\
-                    Press ENTER if you wanna keep it. Otherwise, write the new directory"
-            )
+            print(f"\nGIMI directory found: {config.GIMI_DIRECTORY}")
+            print("Press ENTER if you wanna keep it. Otherwise, write the new directory")
             answer = input(" > ")
 
             if not answer:
