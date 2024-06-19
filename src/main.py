@@ -61,8 +61,10 @@ class GenshinRichPresence:
 
         return False
 
+
     def set_last_update(self) -> None:
         self.last_update = time.time()
+
 
     def check_changed_focus(self) -> bool:
         changed: bool = self.is_inactive
@@ -99,6 +101,7 @@ class GenshinRichPresence:
         os.system("pause")
         sys.exit(-1)
 
+
     def open_log_file(self) -> TextIOWrapper:
         self.logger.info("Opening log file")
 
@@ -119,6 +122,7 @@ class GenshinRichPresence:
 
         with open(ini_file, "w") as file:
             config_parser.write(file)
+
 
     def check_gimi_dir(self) -> None:
         config_parser = ConfigParser()
@@ -169,6 +173,7 @@ class GenshinRichPresence:
         self.details = f"{player_is_inactive}. Exploring {current_region_name}"
         return None
 
+
     async def update_rpc(self) -> None:
         self.check_changed_focus()
         self.update_rpc_details()
@@ -216,6 +221,7 @@ class GenshinRichPresence:
                 await self.update_rpc()
 
             await asyncio.sleep(config.LOG_TAIL_SLEEP_TIME)
+
 
     async def handle_log(self) -> None:
         self.logger.info("Initialize presence activity")
