@@ -9,17 +9,16 @@ from configparser import ConfigParser
 from io import TextIOWrapper
 from typing import Optional, AsyncGenerator, Any
 
-import nest_asyncio
+import nest_asyncio  # type: ignore[import-untyped] # No stub files?
 import psutil
-from pypresence import Presence
+from pypresence import Presence  # type: ignore[import-untyped] # No stub files?
 
 import config
 from data_handler import fetch_data
 
-try:
+# Windows-only: this specific if may not trigger mypy based on OS
+if sys.platform == "win32":
     import win32gui
-except ImportError:
-    pass
 
 nest_asyncio.apply()
 
@@ -53,7 +52,7 @@ class GenshinRichPresence:
         self.details: Optional[str] = None
         self.small_image: str = "unknown"
 
-        self.world_data: dict[str, str]
+        self.world_data: dict[str, list[str]]
 
     def can_update_rpc(self) -> bool:
         if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:

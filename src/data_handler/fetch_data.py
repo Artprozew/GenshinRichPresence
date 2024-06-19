@@ -74,7 +74,7 @@ def fetch_all_data() -> dict[str, list[str]]:
     if config.ALWAYS_CHECK_FOR_UPDATES:
         check_characters_updates()
 
-    world_data: dict[str, list[str]] = {}
+    world_data: dict[str, list[str]]
     json_file: str = os.path.join("data", "world", "world_data.json")
 
     if not os.path.exists(json_file):

@@ -6,9 +6,9 @@ import dotenv
 dotenv.load_dotenv()
 
 # Path to your 3DMigoto (e.g. C:\3dmigoto\)
-GIMI_DIRECTORY: Union[str, None] = os.getenv("GIMI_DIRECTORY")
+GIMI_DIRECTORY: Union[str] = os.getenv("GIMI_DIRECTORY", "")
 # Path to your RichPresenceData in your GIMI Mods folder (e.g. C:\3dmigoto\Mods\Others\RichPresenceData)
-GRP_DATA_DIRECTORY: Union[str, None] = os.getenv("GRP_DATA_DIRECTORY")
+GRP_DATA_DIRECTORY: Union[str] = os.getenv("GRP_DATA_DIRECTORY", "")
 
 # Whether or not you want the program to check updates for data about the characters or similar (e.g. newly released characters)
 # True (always update) or False. Defaults to True
