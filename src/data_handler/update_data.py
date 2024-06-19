@@ -6,12 +6,10 @@ from typing import Optional
 
 import requests
 
-standalone: bool = False
-
 try:
     import config
 except ImportError:
-    standalone = True
+    pass
 
 
 def update_character(name: str) -> bool:
@@ -113,11 +111,10 @@ def main() -> None:
 
 # If used as standalone script
 if __name__ == "__main__":
-    if standalone:
-        # Inoffensive workaround? :)
-        if "config" not in sys.modules:
+    # Inoffensive workaround? :)
+    if "config" not in sys.modules:
 
-            class config:  # type: ignore # noqa F811
-                GRP_DATA_DIRECTORY: Optional[str] = None
+        class config:  # type: ignore # noqa F811
+            GRP_DATA_DIRECTORY: Optional[str] = None
 
     main()

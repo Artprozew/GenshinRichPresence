@@ -51,6 +51,6 @@ repos:
         # from above repo: mypy runs with 'mypy --ignore-missing-imports' because
         # pre-commit runs mypy from an isolated virtualenv so it won't have access to those
         args: [
-          "--config-file=setup.cfg", "--ignore-missing-imports", "--no-warn-unused-ignores"
+          "--config-file=setup.cfg", "--ignore-missing-imports"
         ]
         additional_dependencies: [types-requests, types-psutil, types-pywin32]

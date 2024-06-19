@@ -9,9 +9,9 @@ from configparser import ConfigParser
 from io import TextIOWrapper
 from typing import Optional, AsyncGenerator, Any
 
-import nest_asyncio  # type: ignore[import-untyped] # No stub files?
+import nest_asyncio  # type: ignore[import-untyped, unused-ignore] # No stub files?
 import psutil
-from pypresence import Presence  # type: ignore[import-untyped] # No stub files?
+from pypresence import Presence  # type: ignore[import-untyped, unused-ignore] # No stub files?
 
 import config
 from data_handler import fetch_data
@@ -67,7 +67,7 @@ class GenshinRichPresence:
     def check_changed_focus(self) -> bool:
         changed: bool = self.is_inactive
 
-        if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":  # type: ignore[name-defined] # Temp workaround
+        if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":  # type: ignore[name-defined, unused-ignore] # Temp. workaround
             self.is_inactive = False
         else:
             self.is_inactive = True
