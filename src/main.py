@@ -153,18 +153,13 @@ class GenshinRichPresence:
 
         # Workaround: Fixes the incorrect displayed region as Liyue when the player is on The Chasm
         # Issue #27: https://github.com/Artprozew/GenshinRichPresence/issues/27
-        if self.current_region == "liyue" and self.previous_region == "the_chasm":
+        if self.current_region == "Liyue" and self.previous_region == "The Chasm":
             self.logger.debug("Setting region as the_chasm instead of liyue to workaround #27")
-            self.current_region = "the_chasm"
+            self.current_region = "The Chasm"
 
-        # Capitalize and remove underscore from the region name
-        # If this gets too frequent, it's probably better to save it in memory for later use
-        current_region_name: str = " ".join(
-            [word.capitalize() for word in self.current_region.split("_")]
-        )
         player_is_inactive = "Inactive" if self.is_inactive else "In-game"
 
-        self.details = f"{player_is_inactive}. Exploring {current_region_name}"
+        self.details = f"{player_is_inactive}. Exploring {self.current_region}"
         return None
 
     async def update_rpc(self) -> None:
@@ -223,10 +218,14 @@ class GenshinRichPresence:
 
         async for line in self.tail_file(log_text_wrapper):
             # Ignore lines we do not need
-            if "TextureOverride" not in line or "\\RichPresenceData\\" not in line:
+            if (
+                "TextureOverride" not in line
+                or "\\RichPresenceData\\" not in line
+                or line.endswith("]\n")
+            ):
                 continue
 
-            # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\LumitoileIB matched (...) OR
+            # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\__Fontaine__LumitoileIB matched (...) OR
             # TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\ClorindeVertexLimitRaise matched (...)
             line_match_list: list[str] = line.split("PlayableCharacterData.ini\\")
 
@@ -240,19 +239,20 @@ class GenshinRichPresence:
                     self.updatable = True
                     self.logger.debug(f"Updated current_character to {self.current_character}")
             else:
-                # Get and concatenate just the texture text after the .ini file
-                asset: str = line_match_list[0].split("WorldData.ini\\")[1].split(" ")[0]
-                asset = f"TextureOverride{asset}"
-                new_region: str = self.world_data[asset][1]
+                # Gets the name of the region (between double underscores) after the .ini file
+                region: str = line_match_list[0].split("WorldData.ini\\")[1].split("__", 2)[1]
+                # Replace single underscore for regions like Sumeru_Forest
+                region = region.replace("_", " ")
 
-                if self.current_region != new_region:
+                if self.current_region != region:
                     # Store the "current" region into the previous_region
                     self.previous_region = self.current_region
 
-                    self.current_region = new_region
+                    self.current_region = region
                     self.updatable = True
                     self.logger.debug(
-                        f"Updated region to {self.current_region}, hash: {self.world_data[asset][0]}"
+                        f"Updated region to {self.current_region}, "
+                        f"hash: {line_match_list[0].split("hash=")[1].split(' ')[0]}"
                     )
 
     def main(self) -> None:
