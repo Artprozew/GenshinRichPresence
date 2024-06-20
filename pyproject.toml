@@ -3,24 +3,39 @@ name = "GenshinRichPresence"
 version = "0.1.1-beta"
 description = "Discord Rich Presence for Genshin Impact"
 authors = ["Artprozew <artprozew@gmail.com>"]
-license = "LGPL 2.1"
+license = "MIT"
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.9"
 requests = "^2.31.0"
-pywin32 = "^306"
+pywin32 = {version = "^306", markers = 'platform_system == "Windows"'}
 pypresence = "^4.3.0"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 python-dotenv = "^1.0.1"
 
-
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.10.0"
 black = "^24.4.2"
 flake8 = "^7.0.0"
+vermin = "^1.6.0"
+pre-commit = "^3.7.1"
+commitizen = "^3.27.0"
+types-requests = "^2.32.0.20240602"
+types-psutil = "^5.9.5.20240516"
+types-pywin32 = {version = "^306.0.0.20240408", markers = 'platform_system == "Windows"'}
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "semver2"
+version_provider = "poetry"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
 
 [build-system]
 requires = ["poetry-core"]

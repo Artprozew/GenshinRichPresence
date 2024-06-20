@@ -1,64 +1,88 @@
 import os
 import json
 import logging
-from typing import Dict
+from configparser import ConfigParser
+from typing import Optional, Any
 
 import requests
 
+import config
+from data_handler import update_data
 
-def fetch_all_data() -> tuple[list[str], Dict[str, str]]:
-    logger = logging.getLogger(__name__)
-    logger.info("Requesting data from API endpoint...")
+logger: logging.Logger = logging.getLogger(__name__)
 
-    data: list[str] = []
-    world_data: Dict[str, str] = {}
 
-    root_dir: os.PathLike = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    data_dir: os.PathLike = os.path.join(root_dir, "data")
-    characters_dir: os.PathLike = os.path.join(data_dir, "characters")
-    world_dir: os.PathLike = os.path.join(data_dir, "world")
-
-    json_file: os.PathLike = os.path.join(characters_dir, "characters_data.json")
-    request: requests.Response
-    do_request: bool = True
+def request_characters_update() -> Optional[requests.Response]:
+    response_error: bool = False
+    logger.info("Checking for the latest added characters")
 
     try:
-        request = requests.get("https://genshin.jmp.blue/characters/") # Tries to get the latest data from API
+        # Get the latest characters from the GI-Model-Importer-Assets repository as they add new characters early
+        request = requests.get(
+            "https://api.github.com/repos/SilentNightSound/GI-Model-Importer-Assets/contents/PlayerCharacterData"
+        )
     except requests.exceptions.RequestException:
-        do_request = False
+        response_error = True
 
-    if not os.path.exists(characters_dir):
-        logger.info(f'Directory "{characters_dir}" does not exists. Creating one...')
-        os.makedirs(characters_dir)
+    if response_error or not request or (request.status_code < 200 or request.status_code > 299):
+        logger.warning("Could not request data from the repository")
+        return None
 
-    if not do_request: # Backup that may be outdated
-        logger.info("Couldn't request data from API, getting from already existing file")
-        if os.path.exists(json_file):
-            with open(json_file, "r+") as file:
-                data = json.load(file)
-        else:
-            raise(RuntimeError("Couldn't get/request any data!"))
-    else:
-        data = json.loads(request.content)
-
-    if "arataki-itto" in data:
-        data.remove("arataki-itto")
-        data.append("itto")
-    if "hu-tao" in data:
-        data.remove("hu-tao")
-        data.append("hutao")
-
-    with open(json_file, "w+") as file: # May break with auto-py-to-exe?
-        logger.info("Dumping data to JSON file") # Saving latest data to JSON file
-        json.dump(data, file, ensure_ascii=False, indent=4)
+    return request
 
 
-    json_file: os.PathLike = os.path.join(world_dir, "world_data.json")
-    if os.path.exists(json_file):
-        with open(json_file, "r+") as file:
-            world_data = json.load(file)
-    else:
-        raise(FileNotFoundError(f'File {json_file} does not exists!'))
+def check_characters_updates() -> None:
+    request: Optional[requests.Response] = request_characters_update()
+    character_file: str = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
+
+    if not request or not os.path.exists(character_file):
+        return None
+
+    data: list[dict[str, Any]] = json.loads(request.content)
+    config_parser = ConfigParser()
+    config_parser.read(character_file)
+
+    for obj in data:
+        if config_parser.has_section(f"TextureOverride{obj['name']}VertexLimitRaise"):
+            continue
+
+        while True:
+            print(f"\nSeems like the character {obj['name']} was recently added to the game")
+            print("Would you like to update its data? (Y/N)")
+            update_confirm = input(" > ").lower()
+
+            if update_confirm == "y" or update_confirm == "yes":
+                update_data.update_character(obj["name"])
+                break
+            elif update_confirm == "n" or update_confirm == "no":
+                break
+
+
+def fetch_all_data() -> dict[str, list[str]]:
+    """Fetches character and/or world data
+
+    Checks updates for the latest character data from an API if necessary and opted-in
+
+    Returns:
+        dict: A dictionary containing world data in this form:
+            key (str): Texture override name\n
+            value (list): A list with two elements:\n
+                - texture hash (str)
+                - region name (str)
+    """
+    logger.info("Requesting data from API endpoint")
+
+    if config.ALWAYS_CHECK_FOR_UPDATES:
+        check_characters_updates()
+
+    world_data: dict[str, list[str]]
+    json_file: str = os.path.join("data", "world", "world_data.json")
+
+    if not os.path.exists(json_file):
+        raise FileNotFoundError(f"File {json_file} does not exists!")
+
+    with open(json_file, "r+") as file:
+        world_data = json.load(file)
 
     logger.info("Requests complete")
-    return data, world_data
+    return world_data
