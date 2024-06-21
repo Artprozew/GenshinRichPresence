@@ -13,41 +13,39 @@ class GameMonitor:
     process = None
 
     def __init__(self) -> None:
-        if not GameMonitor.process:
-            GameMonitor.get_process()
+        if not self.process:
 
     def get_create_time(self):
-        return GameMonitor.process.create_time()
+        return self.process.create_time()
 
     def is_user_active(self) -> bool:
-        return GameMonitor.user_active
+        return self.user_active
 
     @classmethod
     def get_process(cls) -> Optional[psutil.Process]:
-        for proc in psutil.process_iter():
-            if "GenshinImpact.exe" in proc.name():
-                    GameMonitor.process = proc
-                    return proc
+        for process in psutil.process_iter():
+            if "GenshinImpact.exe" in process.name():
+                    cls.process = process
+                    return process
             
         return None
 
     @classmethod
     def wait_for_game(cls):
-        logger.info("Searching for game process")
-        while not GameMonitor.process:
-            GameMonitor.get_process()
-            logger.info("Game process not found, waiting for 3s...")
+        cls.logger.info("Waiting for game process")
+        while not cls.get_process():
+            cls.logger.info("Game process not found, waiting for 3s...")
             time.sleep(3)
 
     def check_changed_focus(self) -> bool:
-        changed: bool = GameMonitor.user_active
+        changed: bool = self.user_active
 
         if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == "Genshin Impact":  # type: ignore[name-defined, unused-ignore] # Temp. workaround
-            GameMonitor.user_active = True
+            self.user_active = True
         else:
-            GameMonitor.user_active = False
+            self.user_active = False
 
-        changed = changed != GameMonitor.user_active
+        changed = changed != self.user_active
         if changed:
-            logger.debug(f"Updated user_active status to {GameMonitor.user_active}")
+            self._logger.debug(f"Updated user_active status to {self.user_active}")
         return changed

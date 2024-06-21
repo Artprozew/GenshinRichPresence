@@ -32,11 +32,11 @@ class InteractionManager:
 
         print(f"\nGIMI directory found: {config.GIMI_DIRECTORY}")
         print("Press ENTER if you wanna keep it. Otherwise, write the new directory")
-        answer = input(" > ")
+        response = input(" > ")
 
-        if not answer:
+        if not response:
             config_parser.read(ini_file)
             config.GIMI_DIRECTORY = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
         else:
-            config.GIMI_DIRECTORY = answer
+            config.GIMI_DIRECTORY = response
             cls.save_ini_file(config_parser, ini_file)
