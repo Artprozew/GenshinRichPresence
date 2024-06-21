@@ -4,34 +4,44 @@ import win32gui
 import time
 import logging
 
-logger = logging.getLogger(__name__)
-
 
 class GameMonitor:
-    user_active = True
-    create_time = 0
-    process = None
+    user_active: bool = True
 
     def __init__(self) -> None:
-        if not self.process:
+        self._logger = logging.getLogger(__name__)
 
-    def get_create_time(self):
-        return self.process.create_time()
+        # wait_for_game() already ran, so it SHOULD find the game process
+        self._process = self.find_game_process()
+        assert self._process is not None, "Could not find the game process!"
+
+        self._process_create_time = self._process.create_time()
 
     def is_user_active(self) -> bool:
         return self.user_active
 
+    def get_process_create_time(self) -> float:
+        return self._process_create_time
+
+    def get_game_process(self) -> Optional[psutil.Process]:
+        return self._process
+
     @classmethod
-    def get_process(cls) -> Optional[psutil.Process]:
+    def find_game_process(cls) -> Optional[psutil.Process]:
         for process in psutil.process_iter():
             if "GenshinImpact.exe" in process.name():
-                    cls.process = process
-                    return process
-            
+                return process
+
         return None
 
     @classmethod
     def wait_for_game(cls) -> None:
+        if not hasattr(cls, "logger"):
+            cls._logger = logging.getLogger(__name__)
+
+        cls._logger.info("Waiting for game process")
+        while not cls.find_game_process():
+            cls._logger.info("Game process not found, waiting for 3s...")
             time.sleep(3)
 
     def check_changed_focus(self) -> bool:
