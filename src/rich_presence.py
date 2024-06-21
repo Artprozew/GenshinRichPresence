@@ -3,25 +3,28 @@ import time
 import pypresence
 import logging
 from game_monitor import GameMonitor
+from typing import Final, Any
+
+
 class DiscordRichPresence(pypresence.Presence):
-    start = 0
-    state = "Unknown"
-    details = "Unknown"
-    large_image = "Unknown"
-    small_image = "Unknown"
-    large_text = "Unknown"
-    small_text = "Unknown"
-    previous_region = "Unknown"
-    current_region = "Unknown"
-    current_character = "Unknown"
-    updatable = False
+    start: int = 0
+    state: str = "Unknown"
+    details: str = "Unknown"
+    large_image: str = "Unknown"
+    small_image: str = "Unknown"
+    large_text: str = "Unknown"
+    small_text: str = "Unknown"
+    previous_region: str = "Unknown"
+    current_region: str = "Unknown"
+    current_character: str = "Unknown"
+    updatable: bool = False
 
     def __init__(self) -> None:
         super().__init__(config.APP_ID)
-        self._logger = logging.getLogger(__name__)
+        self._logger: logging.Logger = logging.getLogger(__name__)
 
         self.connect()
-        self.game_monitor = GameMonitor()
+        self.game_monitor: GameMonitor = GameMonitor()
     def can_update_rpc(self) -> bool:
         if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:
             return self.game_monitor.check_changed_focus() or self.updatable
@@ -43,7 +46,7 @@ class DiscordRichPresence(pypresence.Presence):
             self._logger.debug("Setting region as the_chasm instead of liyue to workaround #27")
             self.current_region = "The Chasm"
 
-        is_user_active = "In-Game" if self.game_monitor.is_user_active() else "Inactive"
+        is_user_active: Final[str] = "In-Game" if self.game_monitor.is_user_active() else "Inactive"
         self.details = f"{is_user_active}. Exploring {self.current_region}"
 
         self.update(

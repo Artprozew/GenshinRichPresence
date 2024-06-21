@@ -1,5 +1,5 @@
 from io import TextIOWrapper
-from typing import Generator, Any
+from typing import Generator, Any, Final
 import os
 import time
 import config
@@ -8,14 +8,13 @@ from rich_presence import DiscordRichPresence
 
 
 class LogMonitor:
-    def __init__(self, log_dir) -> None:
+    def __init__(self, log_dir: str) -> None:
         self._logger: logging.Logger = logging.getLogger(__name__)
 
         if not os.path.exists(log_dir):
             raise FileNotFoundError("Could not find the game log")
 
-        self.LOG_DIR = log_dir
-        self.rpc = DiscordRichPresence()
+        self.rpc: DiscordRichPresence = DiscordRichPresence()
 
         self._logger.info("Opening log file")
 
@@ -31,10 +30,10 @@ class LogMonitor:
         self.handle_log()
 
     def get_file_size(self) -> int:
-        current_cursor_position: int = self._log_file.tell()
+        current_cursor_position: Final[int] = self._log_file.tell()
         self._log_file.seek(os.SEEK_SET, os.SEEK_END)
 
-        size: int = self._log_file.tell()
+        size: Final[int] = self._log_file.tell()
         self._log_file.seek(current_cursor_position)
 
         return size
@@ -50,7 +49,7 @@ class LogMonitor:
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
-            line = self._log_file.readline()
+            line: str = self._log_file.readline()
 
             if line:
                 yield line
@@ -63,6 +62,7 @@ class LogMonitor:
             time.sleep(config.LOG_TAIL_SLEEP_TIME)
         
     def handle_log(self) -> None:
+        line: str
         for line in self.tail_file():
             # Ignore lines we do not need
             if (

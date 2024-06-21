@@ -31,10 +31,7 @@ class GameMonitor:
         return None
 
     @classmethod
-    def wait_for_game(cls):
-        cls.logger.info("Waiting for game process")
-        while not cls.get_process():
-            cls.logger.info("Game process not found, waiting for 3s...")
+    def wait_for_game(cls) -> None:
             time.sleep(3)
 
     def check_changed_focus(self) -> bool:
