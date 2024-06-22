@@ -58,7 +58,7 @@ def check_characters_updates() -> None:
                 break
 
 
-def fetch_all_data() -> dict[str, list[str]]:
+def fetch_all_data() -> None:
     """Fetches character and/or world data
 
     Checks updates for the latest character data from an API if necessary and opted-in
@@ -75,14 +75,4 @@ def fetch_all_data() -> dict[str, list[str]]:
     if config.ALWAYS_CHECK_FOR_UPDATES:
         check_characters_updates()
 
-    world_data: dict[str, list[str]]
-    json_file: str = os.path.join("data", "world", "world_data.json")
-
-    if not os.path.exists(json_file):
-        raise FileNotFoundError(f"File {json_file} does not exists!")
-
-    with open(json_file, "r+") as file:
-        world_data = json.load(file)
-
     logger.info("Requests complete")
-    return world_data
