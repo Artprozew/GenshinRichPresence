@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class GenshinRichPresence:
-    def start(self):
+    def start(self) -> None:
         sys.excepthook = exception_handler
         InteractionManager.check_gimi_dir()
         GameMonitor.wait_for_game()
