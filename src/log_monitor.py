@@ -1,10 +1,12 @@
 from io import TextIOWrapper
-from typing import Generator, Any, Final
+from typing import Generator, Any, Final, Optional
+from types import FrameType
 import os
 import time
 import config
 import logging
 from rich_presence import DiscordRichPresence
+from utils import handle_exit
 
 
 class LogMonitor:
@@ -18,6 +20,19 @@ class LogMonitor:
 
         self._logger.info("Opening log file")
         self._log_file: TextIOWrapper = self.open_log_file(log_dir)
+
+        self._terminated_flag: bool = False
+        handle_exit.handle_exit_hook(self._teardown, 0, None)
+
+    def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
+        # May be called two times
+        if not self._terminated_flag:
+            self._logger.warning("Closing log file and shutting down")
+
+        self._terminated_flag = True
+
+        if self._log_file is not None and not self._log_file.closed:
+            self._log_file.close()
 
     def start(self) -> None:
         if self.get_file_size() > 5000000:
@@ -50,6 +65,9 @@ class LogMonitor:
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
+            if self._terminated_flag:
+                break
+
             line: str = self._log_file.readline()
 
             if line:

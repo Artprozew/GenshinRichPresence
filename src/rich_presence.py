@@ -3,7 +3,9 @@ import time
 import pypresence
 import logging
 from game_monitor import GameMonitor
-from typing import Final, Any
+from utils import handle_exit
+from typing import Final, Optional
+from types import FrameType
 
 
 class DiscordRichPresence(pypresence.Presence):
@@ -25,6 +27,12 @@ class DiscordRichPresence(pypresence.Presence):
 
         self.connect()
         self.game_monitor: GameMonitor = GameMonitor()
+        handle_exit.handle_exit_hook(self._teardown, 0, None)
+
+    def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
+        self._logger.warning("Clearing Rich Presence")
+        self.clear()
+
     def can_update_rpc(self) -> bool:
         if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:
             return self.game_monitor.check_changed_focus() or self.updatable
@@ -50,7 +58,7 @@ class DiscordRichPresence(pypresence.Presence):
         self.details = f"{is_user_active}. Exploring {self.current_region}"
 
         self.update(
-            start=self.game_monitor.get_create_time(),  # type: ignore # Needs rework of class and better logic with None
+            start=self.game_monitor.get_process_create_time(),
             state=f"Playing as {self.current_character}",
             details=self.details,
             large_image="genshin",
