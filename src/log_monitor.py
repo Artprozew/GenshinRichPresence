@@ -17,6 +17,7 @@ class LogMonitor:
         self.rpc: DiscordRichPresence = DiscordRichPresence()
 
         self._logger.info("Opening log file")
+        self._log_file: TextIOWrapper = self.open_log_file(log_dir)
 
     def start(self) -> None:
         if self.get_file_size() > 5000000:
@@ -41,11 +42,11 @@ class LogMonitor:
     def seek_back_n_bytes_from_end(self, n_bytes: int) -> None:
         self._log_file.seek(self.get_file_size() - n_bytes, os.SEEK_SET)
 
-    def open_log_file(self) -> TextIOWrapper:
-        if not os.path.exists(self.LOG_DIR):
-            raise FileNotFoundError(f'The file "{self.LOG_DIR}" could not be found')
+    def open_log_file(self, log_dir: str) -> TextIOWrapper:
+        if not os.path.exists(log_dir):
+            raise FileNotFoundError(f'The file "{log_dir}" could not be found')
 
-        return open(self.LOG_DIR, "r")
+        return open(log_dir, "r")
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
@@ -60,7 +61,7 @@ class LogMonitor:
                 self.rpc.update_rpc()
 
             time.sleep(config.LOG_TAIL_SLEEP_TIME)
-        
+
     def handle_log(self) -> None:
         line: str
         for line in self.tail_file():
