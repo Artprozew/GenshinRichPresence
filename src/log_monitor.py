@@ -10,16 +10,10 @@ from utils import handle_exit
 
 
 class LogMonitor:
-    def __init__(self, log_dir: str) -> None:
+    def __init__(self, rpc: DiscordRichPresence) -> None:
         self._logger: logging.Logger = logging.getLogger(__name__)
 
-        if not os.path.exists(log_dir):
-            raise FileNotFoundError("Could not find the game log")
-
-        self.rpc: DiscordRichPresence = DiscordRichPresence()
-
-        self._logger.info("Opening log file")
-        self._log_file: TextIOWrapper = self.open_log_file(log_dir)
+        self.rpc: DiscordRichPresence = rpc
 
         self._terminated_flag: bool = False
         handle_exit.handle_exit_hook(self._teardown, 0, None)
@@ -34,15 +28,17 @@ class LogMonitor:
         if self._log_file is not None and not self._log_file.closed:
             self._log_file.close()
 
-    def start(self) -> None:
+    def start(self, _log_dir: str) -> None:
+        # Won't open at constructor because mypy yells at us
+        self._logger.info("Opening log file")
+        self._log_file: TextIOWrapper = self.open_log_file(_log_dir)
+        del _log_dir
+
         if self.get_file_size() > 5000000:
             self.seek_back_n_bytes_from_end(5000000)
 
-        self._logger.info("Initialize presence activity")
-        self.rpc.update_rpc()
-
         self._logger.info("Running log file tail loop")
-        self._logger.info("Your activity will now be updated accordingly")
+        self._logger.info("\n\nYour activity will now be updated accordingly\n")
         self.handle_log()
 
     def get_file_size(self) -> int:

@@ -21,12 +21,11 @@ class DiscordRichPresence(pypresence.Presence):
     current_character: str = "Unknown"
     updatable: bool = False
 
-    def __init__(self) -> None:
+    def __init__(self, game_monitor: GameMonitor) -> None:
         super().__init__(config.APP_ID)
         self._logger: logging.Logger = logging.getLogger(__name__)
 
-        self.connect()
-        self.game_monitor: GameMonitor = GameMonitor()
+        self.game_monitor: GameMonitor = game_monitor
         handle_exit.handle_exit_hook(self._teardown, 0, None)
 
     def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
