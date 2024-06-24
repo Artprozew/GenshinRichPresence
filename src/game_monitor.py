@@ -11,9 +11,10 @@ class GameMonitor:
     def __init__(self) -> None:
         self._logger = logging.getLogger(__name__)
 
-        # wait_for_game() already ran, so it SHOULD find the game process
+        # wait_for_game() already ran, so it SHOULD find the game process now
         self._process = self.find_game_process()
-        assert self._process is not None, "Could not find the game process!"
+        assert self._process is not None, "Could not find the game process"
+        self._logger.info(f"Game process with PID {self._process.pid} found")
 
         self._process_create_time = self._process.create_time()
 
@@ -36,7 +37,7 @@ class GameMonitor:
 
     @classmethod
     def wait_for_game(cls) -> None:
-        if not hasattr(cls, "logger"):
+        if not hasattr(cls, "_logger"):
             cls._logger = logging.getLogger(__name__)
 
         cls._logger.info("Waiting for game process")
