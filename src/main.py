@@ -1,27 +1,18 @@
-import logging.config
-from log_monitor import LogMonitor
-from interaction_manager import InteractionManager
-from utils.exception_manager import exception_handler
-import sys
-from game_monitor import GameMonitor
-import config
-import os
 import logging
+import logging.config
+import os
+import sys
 
-
-if os.path.exists("logging.conf"):
-    logging.config.fileConfig("logging.conf")
-else:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
-    )
-
-logger = logging.getLogger(__name__)
+import config
+from game_monitor import GameMonitor
+from log_monitor import LogMonitor
+from rich_presence import DiscordRichPresence
+from utils.exception_manager import exception_handler
 
 
 class GenshinRichPresence:
     def __init__(self) -> None:
+        self._logger = logging.getLogger(__name__)
 
         self.interaction_manager = config.interactor
         self._game_monitor = GameMonitor()
