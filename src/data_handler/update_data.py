@@ -1,8 +1,7 @@
-import os
 import json
+import os
 import sys
 from configparser import ConfigParser
-from typing import Optional
 
 import requests
 
@@ -67,11 +66,19 @@ def main() -> None:
 
     ## This function will erase and rewrite all existing data in the file.
     """
-    if not config.GRP_DATA_DIRECTORY:
-        print("\nPlease write here the path to the RichPresenceData in your GIMI Mods folder")
-        config.GRP_DATA_DIRECTORY = input(" > ")
+    grp_dir: str = ""
 
-    if not os.path.exists(config.GRP_DATA_DIRECTORY):
+    if "config" in sys.modules:
+        grp_dir = config.GRP_DATA_DIRECTORY
+
+    if not grp_dir:
+        print("\nPlease write here the path to the RichPresenceData in your GIMI Mods folder")
+        grp_dir = input(" > ")
+
+    if os.path.exists(f"{grp_dir}\\RichPresenceData"):
+        grp_dir += f"{grp_dir}\\RichPresenceData"
+
+    if not os.path.exists(grp_dir):
         print("Could not locate the folder")
         os.system("pause")
         return None
@@ -85,7 +92,7 @@ def main() -> None:
         elif response == "y" or response == "yes":
             break
 
-    ini_file: str = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
+    ini_file: str = f"{grp_dir}\\PlayableCharacterData.ini"
 
     if os.path.isfile(ini_file):
         os.remove(ini_file)
@@ -109,10 +116,4 @@ def main() -> None:
 
 # If used as standalone script
 if __name__ == "__main__":
-    # Inoffensive workaround? :)
-    if "config" not in sys.modules:
-
-        class config:  # type: ignore # noqa F811
-            GRP_DATA_DIRECTORY: Optional[str] = None
-
     main()
