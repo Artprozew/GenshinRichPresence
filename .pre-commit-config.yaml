@@ -54,3 +54,9 @@ repos:
           "--config-file=setup.cfg", "--ignore-missing-imports"
         ]
         additional_dependencies: [types-requests, types-psutil, types-pywin32]
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (python)

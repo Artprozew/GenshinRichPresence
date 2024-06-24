@@ -2,29 +2,46 @@ import config
 import time
 import pypresence
 import logging
+from utils import handle_exit
+from typing import Final, Optional
+from types import FrameType
 from game_monitor import GameMonitor
-from typing import Final, Any
 
 
 class DiscordRichPresence(pypresence.Presence):
     start: int = 0
+
     state: str = "Unknown"
     details: str = "Unknown"
-    large_image: str = "Unknown"
-    small_image: str = "Unknown"
-    large_text: str = "Unknown"
+
+    large_image: str = "genshin"
+    small_image: str = "unknown"
+    large_text: str = "Genshin Impact"
     small_text: str = "Unknown"
+
     previous_region: str = "Unknown"
     current_region: str = "Unknown"
     current_character: str = "Unknown"
-    updatable: bool = False
 
-    def __init__(self) -> None:
+    last_update: float = time.time() - 10000
+    updatable: bool = True
+
+    def __init__(self, game_monitor: GameMonitor) -> None:
         super().__init__(config.APP_ID)
         self._logger: logging.Logger = logging.getLogger(__name__)
 
-        self.connect()
-        self.game_monitor: GameMonitor = GameMonitor()
+        self.game_monitor: GameMonitor = game_monitor
+        handle_exit.handle_exit_hook(self._teardown, 0, None)
+
+    def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
+        self._logger.warning("Clearing Rich Presence")
+        self.clear()
+
+    def connect(self) -> None:
+        self._logger.info("Connecting Rich Presence")
+        self.update_event_loop(pypresence.utils.get_event_loop())
+        self.loop.run_until_complete(self.handshake())
+
     def can_update_rpc(self) -> bool:
         if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:
             return self.game_monitor.check_changed_focus() or self.updatable
@@ -50,7 +67,7 @@ class DiscordRichPresence(pypresence.Presence):
         self.details = f"{is_user_active}. Exploring {self.current_region}"
 
         self.update(
-            start=self.game_monitor.get_create_time(),  # type: ignore # Needs rework of class and better logic with None
+            start=self.game_monitor.get_process_create_time(),
             state=f"Playing as {self.current_character}",
             details=self.details,
             large_image="genshin",

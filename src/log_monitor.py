@@ -1,33 +1,44 @@
 from io import TextIOWrapper
-from typing import Generator, Any, Final
+from typing import Generator, Any, Final, Optional
+from types import FrameType
 import os
 import time
 import config
 import logging
 from rich_presence import DiscordRichPresence
+from utils import handle_exit
 
 
 class LogMonitor:
-    def __init__(self, log_dir: str) -> None:
+    def __init__(self, rpc: DiscordRichPresence) -> None:
         self._logger: logging.Logger = logging.getLogger(__name__)
 
-        if not os.path.exists(log_dir):
-            raise FileNotFoundError("Could not find the game log")
+        self.rpc: DiscordRichPresence = rpc
 
-        self.rpc: DiscordRichPresence = DiscordRichPresence()
+        self._terminated_flag: bool = False
+        handle_exit.handle_exit_hook(self._teardown, 0, None)
 
+    def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
+        # May be called two times
+        if not self._terminated_flag:
+            self._logger.warning("Closing log file and shutting down")
+
+        self._terminated_flag = True
+
+        if self._log_file is not None and not self._log_file.closed:
+            self._log_file.close()
+
+    def start(self, _log_dir: str) -> None:
+        # Won't open at constructor because mypy yells at us
         self._logger.info("Opening log file")
-        self._log_file: TextIOWrapper = self.open_log_file(log_dir)
+        self._log_file: TextIOWrapper = self.open_log_file(_log_dir)
+        del _log_dir
 
-    def start(self) -> None:
         if self.get_file_size() > 5000000:
             self.seek_back_n_bytes_from_end(5000000)
 
-        self._logger.info("Initialize presence activity")
-        self.rpc.update_rpc()
-
         self._logger.info("Running log file tail loop")
-        self._logger.info("Your activity will now be updated accordingly")
+        self._logger.info("\n\nYour activity will now be updated accordingly\n")
         self.handle_log()
 
     def get_file_size(self) -> int:
@@ -50,6 +61,9 @@ class LogMonitor:
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
+            if self._terminated_flag:
+                break
+
             line: str = self._log_file.readline()
 
             if line:
