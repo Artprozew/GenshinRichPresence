@@ -2,24 +2,29 @@ import config
 import time
 import pypresence
 import logging
-from game_monitor import GameMonitor
 from utils import handle_exit
 from typing import Final, Optional
 from types import FrameType
+from game_monitor import GameMonitor
 
 
 class DiscordRichPresence(pypresence.Presence):
     start: int = 0
+
     state: str = "Unknown"
     details: str = "Unknown"
-    large_image: str = "Unknown"
-    small_image: str = "Unknown"
-    large_text: str = "Unknown"
+
+    large_image: str = "genshin"
+    small_image: str = "unknown"
+    large_text: str = "Genshin Impact"
     small_text: str = "Unknown"
+
     previous_region: str = "Unknown"
     current_region: str = "Unknown"
     current_character: str = "Unknown"
-    updatable: bool = False
+
+    last_update: float = time.time() - 10000
+    updatable: bool = True
 
     def __init__(self, game_monitor: GameMonitor) -> None:
         super().__init__(config.APP_ID)
@@ -31,6 +36,11 @@ class DiscordRichPresence(pypresence.Presence):
     def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
         self._logger.warning("Clearing Rich Presence")
         self.clear()
+
+    def connect(self) -> None:
+        self._logger.info("Connecting Rich Presence")
+        self.update_event_loop(pypresence.utils.get_event_loop())
+        self.loop.run_until_complete(self.handshake())
 
     def can_update_rpc(self) -> bool:
         if (time.time() - self.last_update) > config.RPC_UPDATE_RATE:
