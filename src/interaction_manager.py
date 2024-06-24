@@ -1,46 +1,113 @@
-import config
-from configparser import ConfigParser
-import tempfile
+import logging
 import os
+from configparser import ConfigParser
+from typing import Any, Optional, Union
 
 
 class InteractionManager:
-    @classmethod
-    def save_ini_file(cls, config_parser: ConfigParser, ini_file: str, game_dir: str) -> None:
-        if not os.path.exists(os.path.dirname(ini_file)):
-            os.mkdir(os.path.dirname(ini_file))
+    def __init__(self, ini_file: str, log_file_name: str):
+        self._logger = logging.getLogger(__name__)
 
-        if not config_parser.has_section("SETTINGS"):
-            config_parser.add_section("SETTINGS")
-        config_parser["SETTINGS"]["GIMI_DIRECTORY"] = game_dir
+        self.ini_file: str = ini_file
+        self.log_file_name = log_file_name
+        self.config_parser: ConfigParser = ConfigParser()
 
-        with open(ini_file, "w") as file:
-            config_parser.write(file)
+    def set_ini_option(self, section: str, option: str, value: Any) -> None:
+        if not self.config_parser.has_section(section):
+            self.config_parser.add_section(section)
 
-    @classmethod
-    def check_gimi_dir(cls) -> str:
-        config_parser: ConfigParser = ConfigParser()
-        ini_file: str = f"{tempfile.gettempdir()}\\GenshinRichPresence\\config.ini"
-        game_dir: str = ""
+        self.config_parser[section][option] = value
 
-        if not os.path.exists(ini_file):
-            print("\nPlease write here your GIMI directory path")
-            game_dir = input(" > ")
-            cls.save_ini_file(config_parser, ini_file, game_dir)
-            return game_dir
+        with open(self.ini_file, "w") as file:
+            self.config_parser.write(file)
 
-        config_parser.read(ini_file)
-        game_dir = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
+    def get_ini_option(
+        self, section: str, option: str, *, message: Optional[str] = None, mode: str = "normal"
+    ) -> str:
+        if mode not in ["strict", "normal"]:
+            raise ValueError(f"Invalid mode: {mode}")
 
-        print(f"\nGIMI directory found: {game_dir}")
-        print("Press ENTER if you wanna keep it. Otherwise, write the new directory")
-        response: str = input(" > ")
+        if not os.path.exists(self.ini_file):
+            if mode == "strict":
+                raise FileNotFoundError(f'Could not find "{self.ini_file}" file')
 
-        if not response:
-            config_parser.read(ini_file)
-            game_dir = config_parser.get("SETTINGS", "GIMI_DIRECTORY")
+        self.config_parser.read(self.ini_file)
+
+        if not self.config_parser.has_section(section) or not self.config_parser.has_option(
+            section, option
+        ):
+            if mode == "strict" or not message:
+                raise ValueError(f"Section or Option not found: [{section}] {option}")
+
+            if message:
+                print(f"\nCould not find the {option}.")
+                response: str = str(
+                    self.wait_input_response(f"Please insert the {message}", question=False)
+                )
+                self.set_ini_option(section, option, response)
+
+        return self.config_parser[section][option]
+
+    def get_check_save_ini(self, section: str, option: str, message: str) -> str:
+        self._logger.info("Finding and reading config.ini")
+        argument = self.get_ini_option(section, option, message=message, mode="normal")
+
+        self._logger.info("Checking correct directory")
+        directory: str = self.check_directory(argument, check_file=self.log_file_name)
+
+        self._logger.info("Saving directory to config.ini")
+        self.set_ini_option(section, option, directory)
+
+        return directory
+
+    @staticmethod
+    def check_directory(dir: str, *, check_file: Optional[str] = None) -> str:
+        if not check_file:
+            if os.path.exists(dir):
+                return dir
         else:
-            game_dir = response
-            cls.save_ini_file(config_parser, ini_file, game_dir)
+            if os.path.exists(os.path.join(dir, "d3d11_log.txt")):
+                return dir
 
-        return game_dir
+        content_type: str = "directory" if not check_file else "log"
+        response: bool = bool(
+            InteractionManager.wait_input_response(
+                f'\nThe {content_type} at "{dir}" was not found\n'
+                "Would you like to change it now?"
+            )
+        )
+        if response:
+            path: str = str(InteractionManager.wait_input_response("\nNew path:", question=False))
+            return InteractionManager.check_directory(path, check_file=check_file)
+
+        return dir
+
+    @staticmethod
+    def wait_input_response(message: str, *, question: bool = True) -> Union[str, bool]:
+        while True:
+            print(f"{message}{' (Y/N)' if question else ''}")
+            response: str = input(" > ")
+
+            if not response:
+                continue
+
+            if not question:
+                return response
+
+            response = response.lower()
+            if response == "y" or response == "yes":
+                return True
+            elif response == "n" or response == "no":
+                return False
+
+    @classmethod
+    def find_folder(cls, folder: str, start: str) -> Optional[str]:
+        if not hasattr(cls, "_logger"):
+            cls._logger = logging.getLogger(__name__)
+
+        cls._logger.info(f"Finding folder {folder}")
+        for root, dirs, _ in os.walk(start):
+            if folder in dirs:
+                return f"{root}\\{folder}"
+
+        return None
