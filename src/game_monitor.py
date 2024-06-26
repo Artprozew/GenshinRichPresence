@@ -1,18 +1,21 @@
-import psutil
-from typing import Optional
-import win32gui
-import time
 import logging
+import time
+from typing import Optional
+
+import psutil
+import win32gui
+
+import config
 
 
 class GameMonitor:
-    user_active: bool = True
+    user_active: bool = False
 
     def __init__(self) -> None:
         self._logger = logging.getLogger(__name__)
 
         # wait_for_game() already ran, so it SHOULD find the game process now
-        self._process = self.find_game_process()
+        self._process = self.find_game_process(config.GAME_PROCESS_NAME)
         assert self._process is not None, "Could not find the game process"
         self._logger.info(f"Game process with PID {self._process.pid} found")
 
@@ -27,22 +30,22 @@ class GameMonitor:
     def get_game_process(self) -> Optional[psutil.Process]:
         return self._process
 
-    @classmethod
-    def find_game_process(cls) -> Optional[psutil.Process]:
+    @staticmethod
+    def find_game_process(name: str) -> Optional[psutil.Process]:
         for process in psutil.process_iter():
-            if "GenshinImpact.exe" in process.name():
+            if name in process.name():
                 return process
 
         return None
 
     @classmethod
-    def wait_for_game(cls) -> None:
+    def wait_for_game(cls, game_name: str) -> None:
         if not hasattr(cls, "_logger"):
             cls._logger = logging.getLogger(__name__)
 
         cls._logger.info("Waiting for game process")
-        while not cls.find_game_process():
-            cls._logger.info("Game process not found, waiting for 3s...")
+        while not cls.find_game_process(game_name):
+            cls._logger.warning("Game process not found, waiting for 3s...")
             time.sleep(3)
 
     def check_changed_focus(self) -> bool:
@@ -54,6 +57,8 @@ class GameMonitor:
             self.user_active = False
 
         changed = changed != self.user_active
+
         if changed:
             self._logger.debug(f"Updated user_active status to {self.user_active}")
+
         return changed
