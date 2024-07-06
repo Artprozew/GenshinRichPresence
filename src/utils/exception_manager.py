@@ -1,8 +1,10 @@
-from typing import Any
-import tempfile
 import os
-import sys
+import time
 import traceback
+from typing import Any
+
+import config
+from utils.handle_exit import safe_exit
 
 
 def exception_handler(exc_type: Any, exc_value: Any, tb: Any) -> None:

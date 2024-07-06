@@ -1,10 +1,11 @@
-from io import TextIOWrapper
-from typing import Generator, Any, Final, Optional
-from types import FrameType
+import logging
 import os
 import time
+from io import TextIOWrapper
+from types import FrameType
+from typing import Any, Final, Generator, Optional
+
 import config
-import logging
 from rich_presence import DiscordRichPresence
 from utils import handle_exit
 

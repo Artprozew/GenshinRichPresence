@@ -1,13 +1,13 @@
 import logging
 import logging.config
 import os
-import sys
+from typing import Any
 
 import config
 from game_monitor import GameMonitor
 from log_monitor import LogMonitor
 from rich_presence import DiscordRichPresence
-from utils.exception_manager import exception_handler
+from utils.handle_exit import safe_exit
 
 
 class GenshinRichPresence:

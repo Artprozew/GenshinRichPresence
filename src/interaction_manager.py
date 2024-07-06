@@ -1,7 +1,7 @@
 import logging
 import os
 from configparser import ConfigParser
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 
 class InteractionManager:

@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import sys
-import tempfile
 from typing import Final
 
 import dotenv

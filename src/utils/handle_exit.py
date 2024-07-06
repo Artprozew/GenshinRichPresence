@@ -1,8 +1,10 @@
-import signal
 import atexit
-import sys
-from typing import Callable, Any, Optional
+import logging
+import signal
 from types import FrameType
+from typing import Any, Callable, Optional
+
+import config
 
 
 def handle_exit_hook(

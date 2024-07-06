@@ -7,7 +7,7 @@ from typing import Any, Union
 import pypresence
 
 import config
-from config import configRPC_configs, configRPC_characters, configRPC_regions
+from config import configRPC_characters, configRPC_configs, configRPC_regions
 from game_monitor import GameMonitor
 from utils import handle_exit
 
