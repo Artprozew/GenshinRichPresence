@@ -61,18 +61,22 @@ class InteractionManager:
         return directory
 
     @staticmethod
-    def check_directory(dir: str, *, check_file: Optional[str] = None) -> str:
+    def check_directory(
+        directory: str, *, check_file: Optional[str] = None, mode: str = "normal"
+    ) -> str:
         if not check_file:
-            if os.path.exists(dir):
-                return dir
+            if os.path.exists(directory):
+                return directory
         else:
-            if os.path.exists(os.path.join(dir, "d3d11_log.txt")):
-                return dir
+            if os.path.exists(os.path.join(directory, "d3d11_log.txt")):
+                return directory
+            elif mode == "strict":
+                raise FileNotFoundError(f'The log at "{directory}" was not found')
 
         content_type: str = "directory" if not check_file else "log"
         response: bool = bool(
             InteractionManager.wait_input_response(
-                f'\nThe {content_type} at "{dir}" was not found\n'
+                f'\nThe {content_type} at "{directory}" was not found\n'
                 "Would you like to change it now?"
             )
         )
@@ -80,7 +84,7 @@ class InteractionManager:
             path: str = str(InteractionManager.wait_input_response("\nNew path:", question=False))
             return InteractionManager.check_directory(path, check_file=check_file)
 
-        return dir
+        return directory
 
     @staticmethod
     def wait_input_response(message: str, *, question: bool = True) -> Union[str, bool]:
