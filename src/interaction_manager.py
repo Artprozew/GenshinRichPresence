@@ -1,7 +1,7 @@
 import logging
 import os
 from configparser import ConfigParser
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Optional, Union
 
 
 class InteractionManager:
@@ -136,9 +136,43 @@ class InteractionManager:
         if not hasattr(cls, "_logger"):
             cls._logger = logging.getLogger(__name__)
 
-        cls._logger.info(f"Finding folder {folder}")
+        cls._logger.info(f"Finding folder {folder} at {start}")
         for root, dirs, _ in os.walk(start):
             if folder in dirs:
-                return f"{root}\\{folder}"
+                return os.path.join(root, folder)
 
         return None
+
+    # TODO: Move methods to a proper helper module
+    @staticmethod
+    def capitalize_dict(
+        obj: dict[str, str],
+        *,
+        key: bool = True,
+        value: bool = True,
+        delimiter: str = " ",
+        join_sep: str = " ",
+    ) -> dict[str, str]:
+        new_dict: dict[str, Any] = {}
+
+        for k, v in obj.items():
+            key_words: list[str] = []
+            value_words: list[str] = []
+            key_str: str = k
+            value_str: str = v
+
+            if key:
+                for word in k.split(delimiter):
+                    key_words.append(word.capitalize())
+
+                key_str = join_sep.join(key_words)
+
+            if value:
+                for word in v.split(delimiter):
+                    value_words.append(word.capitalize())
+
+                value_str = join_sep.join(value_str)
+
+            new_dict[key_str] = value_str
+
+        return new_dict
