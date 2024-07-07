@@ -5,12 +5,19 @@ import sys
 from typing import Final
 
 import dotenv
+import PIL.Image
+import pystray
 
 from interaction_manager import InteractionManager
+from utils.exception_manager import exception_handler
+from utils.handle_exit import safe_exit
 
-# Pre configs #
+# Program-related pre-configs #
 
-dotenv.load_dotenv()
+sys.excepthook = exception_handler
+
+# Changes the program's root/current working directory for testing purposes or if any issue occurs
+MAIN_DIRECTORY: Final[str] = str(os.getenv("MAIN_DIRECTORY", os.getcwd()))
 
 if os.path.exists("logging.conf"):
     logging.config.fileConfig("logging.conf")
@@ -20,9 +27,18 @@ else:
         format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
     )
 
-interactor = InteractionManager(
-    f"{tempfile.gettempdir()}\\GenshinRichPresence\\config.ini", "d3d11_log.txt"
+dotenv.load_dotenv()
+
+_tray_icon: pystray.Icon = pystray.Icon(
+    "GenshinRichPresence",
+    PIL.Image.open(os.path.join(MAIN_DIRECTORY, "app.ico")),
+    "GenshinRichPresence",
+    (pystray.MenuItem("Quit", safe_exit),),
 )
+
+_tray_icon.run_detached()
+
+interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"), "d3d11_log.txt")
 
 # External configs #
 
