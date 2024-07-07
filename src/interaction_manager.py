@@ -21,9 +21,9 @@ class InteractionManager:
         with open(self.ini_file, "w") as file:
             self.config_parser.write(file)
 
-    def get_ini_option(
-        self, section: str, option: str, *, message: Optional[str] = None, mode: str = "normal"
-    ) -> str:
+    def get_ini_settings(
+        self, section: str, option: Optional[str] = None, *, mode: str = "normal"
+    ) -> Any:
         if mode not in ["strict", "normal"]:
             raise ValueError(f"Invalid mode: {mode}")
 
@@ -31,20 +31,24 @@ class InteractionManager:
             if mode == "strict":
                 raise FileNotFoundError(f'Could not find "{self.ini_file}" file')
 
+            open(self.ini_file, "w").close()
+
         self.config_parser.read(self.ini_file)
 
-        if not self.config_parser.has_section(section) or not self.config_parser.has_option(
-            section, option
-        ):
-            if mode == "strict" or not message:
-                raise ValueError(f"Section or Option not found: [{section}] {option}")
+        if not self.config_parser.has_section(section):
+            if mode == "strict":
+                raise ValueError(f"Section not found: {section}")
 
-            if message:
-                print(f"\nCould not find the {option}.")
-                response: str = str(
-                    self.wait_input_response(f"Please insert the {message}", question=False)
-                )
-                self.set_ini_option(section, option, response)
+            return None
+
+        if not option:
+            return dict(self.config_parser[section])
+
+        if not self.config_parser.has_option(section, option):
+            if mode == "strict":
+                raise ValueError(f"Option not found: [{section}]: {option}")
+
+            return None
 
         return self.config_parser[section][option]
 
