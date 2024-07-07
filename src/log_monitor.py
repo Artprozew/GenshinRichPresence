@@ -16,17 +16,13 @@ class LogMonitor:
 
         self.rpc: DiscordRichPresence = rpc
 
-        self._terminated_flag: bool = False
         handle_exit.handle_exit_hook(self._teardown, 0, None)
 
     def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
-        # May be called two times
-        if not self._terminated_flag:
-            self._logger.warning("Closing log file and shutting down")
-
-        self._terminated_flag = True
+        config._program_stop_flag = True
 
         if self._log_file is not None and not self._log_file.closed:
+            self._logger.warning("Closing log file and shutting down")
             self._log_file.close()
 
     def start(self, _log_dir: str) -> None:
@@ -62,7 +58,7 @@ class LogMonitor:
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
-            if self._terminated_flag:
+            if config._program_stop_flag:
                 break
 
             line: str = self._log_file.readline()
