@@ -48,12 +48,35 @@ class InteractionManager:
 
         return self.config_parser[section][option]
 
-    def get_check_save_ini(self, section: str, option: str, message: str) -> str:
+    def get_environ_or_ini(
+        self,
+        section: str,
+        name: Optional[str],
+        default: Optional[Any] = None,
+        *,
+        check_file: bool = False
+    ) -> Any:
+        result: Any = os.getenv(name if name else section, self.get_ini_settings(section, name))
+
+        if result is not None:
+            if check_file:
+                result = self.check_directory(result, check_file=self.log_file_name, mode="strict")
+            return result
+
+        if default is None:
+            raise RuntimeError(
+                "Missing required configuration. "
+                f"Please set it on your config.ini: [{section}]{': ' + name if name else ''}"
+            )
+
+        return default
+
+    def get_check_save_ini(self, section: str, option: str, *, mode: str = "strict") -> str:
         self._logger.info("Finding and reading config.ini")
-        argument = self.get_ini_option(section, option, message=message, mode="normal")
+        argument: str = str(self.get_ini_settings(section, option, mode=mode))
 
         self._logger.info("Checking correct directory")
-        directory: str = self.check_directory(argument, check_file=self.log_file_name)
+        directory: str = self.check_directory(argument, check_file=self.log_file_name, mode=mode)
 
         self._logger.info("Saving directory to config.ini")
         self.set_ini_option(section, option, directory)
