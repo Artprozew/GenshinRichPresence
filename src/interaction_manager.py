@@ -9,8 +9,11 @@ class InteractionManager:
         self._logger = logging.getLogger(__name__)
 
         self.ini_file: str = ini_file
-        self.log_file_name = log_file_name
+        self.log_file_name: str = log_file_name
+
+        # Creates a case-sensitive ConfigParser
         self.config_parser: ConfigParser = ConfigParser()
+        self.config_parser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
 
     def set_ini_option(self, section: str, option: str, value: Any) -> None:
         if not self.config_parser.has_section(section):
