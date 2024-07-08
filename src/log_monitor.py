@@ -84,35 +84,32 @@ class LogMonitor:
             ):
                 continue
 
-            # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\__Fontaine__LumitoileIB matched (...) OR
-            # TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\ClorindeVertexLimitRaise matched (...)
-            asset_line: list[str] = line.split("PlayableCharacterData.ini\\")
+            # Example lines from the log and their expected output:
+            # "TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\__Fontaine__LumitoileIB (...)" as "Fontaine" OR
+            # "TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\__Hu_Tao__VertexLimitRaise (...)" as "Hu Tao"
+            ini_name: str
+            asset_name: str
+            ini_name, asset_name = line.split("RichPresenceData\\")[1].split("\\", 2)
 
-            # if Asset is a Playable Character
-            if len(asset_line) > 1:
-                # Ignore everything after "VertexLimitRaise" and keep just the character name
-                character: str = asset_line[1].split("VertexLimitRaise")[0]
-                if self.rpc.current_character == character:
+            # Gets only the asset name e.g. "__Sumeru_Forest__(...)" as "Sumeru Forest"
+            asset_name = asset_name.split("__", 2)[1].replace("_", " ")
+
+            if ini_name == "PlayableCharacterData.ini":
+                if self.rpc.current_character == asset_name:
                     continue
 
-                self.rpc.current_character = character
+                self.rpc.current_character = asset_name
                 self.rpc.updatable = True
                 self._logger.debug(f"Updated current_character to {self.rpc.current_character}")
-                continue
+            else:
+                # WorldData.ini
+                if self.rpc.current_region == asset_name:
+                    continue
 
-            # if Asset is not a Playable Character (so it is a region, because currently we only scrape Characters and Regions)
-            # Gets the name of the region (between double underscores) after the .ini file name
-            region: str = asset_line[0].split("WorldData.ini\\")[1].split("__", 2)[1]
-            # Replace single underscore for regions like Sumeru_Forest
-            region = region.replace("_", " ")
-
-            if self.rpc.current_region == region:
-                continue
-
-            self.rpc.previous_region = self.rpc.current_region
-            self.rpc.current_region = region
-            self.rpc.updatable = True
-            self._logger.debug(
-                f"Updated region to {self.rpc.current_region}, "
-                f"hash: {asset_line[0].split('hash=')[1].split(' ')[0]}"
-            )
+                self.rpc.previous_region = self.rpc.current_region
+                self.rpc.current_region = asset_name
+                self.rpc.updatable = True
+                self._logger.debug(
+                    f"Updated region to {self.rpc.current_region}, "
+                    f"hash: {line.split('hash=')[1].split(' ')[0]}"
+                )
