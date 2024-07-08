@@ -1,13 +1,17 @@
 import logging
 import os
 import subprocess
+import sys
 import time
 from typing import Optional
 
 import psutil
-import win32gui
 
 import config
+
+# Windows-only
+if sys.platform != "linux" and sys.platform != "darwin":
+    import win32gui
 
 
 class GameMonitor:
