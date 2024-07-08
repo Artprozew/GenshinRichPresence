@@ -8,6 +8,7 @@ import requests
 
 import config
 from data_handler import update_data
+from utils.data_tools import separate_with
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -33,46 +34,19 @@ def request_characters_update() -> Optional[requests.Response]:
 
 def check_characters_updates() -> None:
     request: Optional[requests.Response] = request_characters_update()
-    character_file: str = f"{config.GRP_DATA_DIRECTORY}\\PlayableCharacterData.ini"
+    character_file: str = os.path.join(config.GRP_DATA_DIRECTORY, "PlayableCharacterData.ini")
 
     if not request or not os.path.exists(character_file):
         return None
 
     data: list[dict[str, Any]] = json.loads(request.content)
-    config_parser = ConfigParser()
+    config_parser: ConfigParser = ConfigParser()
     config_parser.read(character_file)
 
     for obj in data:
-        if config_parser.has_section(f"TextureOverride{obj['name']}VertexLimitRaise"):
-            continue
+        name: str = separate_with(obj["name"], "_")
 
-        while True:
-            print(f"\nSeems like the character {obj['name']} was recently added to the game")
-            print("Would you like to update its data? (Y/N)")
-            update_confirm = input(" > ").lower()
+        if not config_parser.has_section(f"TextureOverride__{name}__VertexLimitRaise"):
+            update_data.update_character(obj["name"], character_file)
 
-            if update_confirm == "y" or update_confirm == "yes":
-                update_data.update_character(obj["name"])
-                break
-            elif update_confirm == "n" or update_confirm == "no":
-                break
-
-
-def fetch_all_data() -> None:
-    """Fetches character and/or world data
-
-    Checks updates for the latest character data from an API if necessary and opted-in
-
-    Returns:
-        dict: A dictionary containing world data in this form:
-            key (str): Texture override name\n
-            value (list): A list with two elements:\n
-                - texture hash (str)
-                - region name (str)
-    """
-    logger.info("Requesting data from API endpoint")
-
-    if config.ALWAYS_CHECK_FOR_UPDATES:
-        check_characters_updates()
-
-    logger.info("Requests complete")
+    logger.info("Done updating characters")
