@@ -36,10 +36,10 @@ class DiscordRichPresence(pypresence.Presence):
     def __init__(self, game_monitor: GameMonitor) -> None:
         super().__init__(config.APP_ID)
         self._logger: logging.Logger = logging.getLogger(__name__)
+        handle_exit.handle_exit_hook(self._teardown, 0, None)
 
         self.game_monitor: GameMonitor = game_monitor
         self.connected = False
-        handle_exit.handle_exit_hook(self._teardown, 0, None)
 
         self.rpc_configs: dict[str, list[Any]] = {
             "large_image": [configRPC_configs["large_image"], []],
@@ -49,29 +49,7 @@ class DiscordRichPresence(pypresence.Presence):
             "state": [configRPC_configs["state"], []],
             "details": [configRPC_configs["details"], []],
         }
-        self.parse_configs()
-
-    def parse_configs(self) -> None:
-        variables: dict[str, str] = {
-            "user_activity": "self.is_user_active",
-            "region": "current_region",
-            "character": "current_character",
-            "weapon": "current_weapon",
-            "game": "game_name",
-            "character_image": "character_image",
-            "region_image": "region_image",
-        }
-        compiled_regex: re.Pattern[str] = re.compile(r"%\((.*?)\)")
-
-        for name in configRPC_configs.keys():
-            matches: list[str] = re.findall(compiled_regex, configRPC_configs[name])
-
-            for match in matches:
-                if match not in variables.keys():
-                    raise ValueError(f"{name}: {match} is not a valid variable")
-
-                self.rpc_configs[name][0] = self.rpc_configs[name][0].replace(f"%({match})", "{}")
-                self.rpc_configs[name][1].append(variables[match])
+        self.pre_parse_configs()
 
     def _teardown(self, _signal_number: int, _stack_frame: Union[FrameType, None]) -> None:
         if self.connected:
@@ -96,6 +74,28 @@ class DiscordRichPresence(pypresence.Presence):
 
     def is_user_active(self) -> str:
         return "in-game" if self.game_monitor.is_user_active() else "inactive"
+
+    def pre_parse_configs(self) -> None:
+        variables: dict[str, str] = {
+            "user_activity": "self.is_user_active",
+            "region": "current_region",
+            "character": "current_character",
+            "weapon": "current_weapon",
+            "game": "game_name",
+            "character_image": "character_image",
+            "region_image": "region_image",
+        }
+        compiled_regex: re.Pattern[str] = re.compile(r"%\((.*?)\)")
+
+        for name in configRPC_configs.keys():
+            matches: list[str] = re.findall(compiled_regex, configRPC_configs[name])
+
+            for match in matches:
+                if match not in variables.keys():
+                    raise ValueError(f"{name}: {match} is not a valid variable")
+
+                self.rpc_configs[name][0] = self.rpc_configs[name][0].replace(f"%({match})", "{}")
+                self.rpc_configs[name][1].append(variables[match])
 
     def get_parsed_configs(self, name: str) -> Union[str, Any]:
         all_attrib: list[str] = []

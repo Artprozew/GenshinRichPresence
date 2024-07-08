@@ -90,18 +90,6 @@ class InteractionManager:
 
         return default
 
-    def get_check_save_ini(self, section: str, option: str, *, mode: str = "strict") -> str:
-        self._logger.info("Finding and reading config.ini")
-        argument: str = str(self.get_ini_settings(section, option, mode=mode))
-
-        self._logger.info("Checking correct directory")
-        directory: str = self.check_directory(argument, check_file=self.log_file_name, mode=mode)
-
-        self._logger.info("Saving directory to config.ini")
-        self.set_ini_option(section, option, directory)
-
-        return directory
-
     @staticmethod
     def check_directory(
         directory: str, *, check_file: Optional[str] = None, mode: str = "normal"
@@ -128,6 +116,30 @@ class InteractionManager:
 
         return directory
 
+    @classmethod
+    def find_folder(cls, folder: str, start: str) -> Optional[str]:
+        if not hasattr(cls, "_logger"):
+            cls._logger = logging.getLogger(__name__)
+
+        cls._logger.info(f"Finding folder {folder} at {start}")
+        for root, dirs, _ in os.walk(start):
+            if folder in dirs:
+                return os.path.join(root, folder)
+
+        return None
+
+    def get_check_save_ini(self, section: str, option: str, *, mode: str = "strict") -> str:
+        self._logger.info("Finding and reading config.ini")
+        argument: str = str(self.get_ini_settings(section, option, mode=mode))
+
+        self._logger.info("Checking correct directory")
+        directory: str = self.check_directory(argument, check_file=self.log_file_name, mode=mode)
+
+        self._logger.info("Saving directory to config.ini")
+        self.set_ini_option(section, option, directory)
+
+        return directory
+
     @staticmethod
     def wait_input_response(message: str, *, question: bool = True) -> Union[str, bool]:
         while True:
@@ -145,15 +157,3 @@ class InteractionManager:
                 return True
             elif response == "n" or response == "no":
                 return False
-
-    @classmethod
-    def find_folder(cls, folder: str, start: str) -> Optional[str]:
-        if not hasattr(cls, "_logger"):
-            cls._logger = logging.getLogger(__name__)
-
-        cls._logger.info(f"Finding folder {folder} at {start}")
-        for root, dirs, _ in os.walk(start):
-            if folder in dirs:
-                return os.path.join(root, folder)
-
-        return None

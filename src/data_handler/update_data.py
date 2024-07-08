@@ -1,9 +1,9 @@
 import json
 import os
 import sys
+import time
 from configparser import ConfigParser
 from typing import Any, Optional
-import time
 
 import requests
 
