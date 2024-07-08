@@ -21,15 +21,27 @@ class LogMonitor:
     def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
         config._program_stop_flag = True
 
-        if self._log_file is not None and not self._log_file.closed:
+        if hasattr(self, "_log_file") and self._log_file is not None and not self._log_file.closed:
             self._logger.warning("Closing log file and shutting down")
             self._log_file.close()
 
-    def start(self, _log_dir: str) -> None:
-        # Won't open at constructor because mypy yells at us
+    def start(self) -> None:
+        if config.START_GAME_AND_GIMI:
+            self._logger.debug("Waiting for log creation")
+            tries = 0
+
+            while not os.path.exists(os.path.join(config.GIMI_DIRECTORY, config.GIMI_LOG_NAME)):
+                if tries >= 60 or config._program_stop_flag:
+                    self._logger.debug("Log was not found. exiting")
+                    return
+
+                tries += 1
+                time.sleep(1)
+
         self._logger.info("Opening log file")
-        self._log_file: TextIOWrapper = self.open_log_file(_log_dir)
-        del _log_dir
+        self._log_file: TextIOWrapper = self.open_log_file(
+            os.path.join(config.GIMI_DIRECTORY, config.GIMI_LOG_NAME)
+        )
 
         if self.get_file_size() > 5000000:
             self.seek_back_n_bytes_from_end(5000000)

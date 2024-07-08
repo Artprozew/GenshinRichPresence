@@ -1,4 +1,6 @@
 import logging
+import os
+import subprocess
 import time
 from typing import Optional
 
@@ -13,8 +15,6 @@ class GameMonitor:
 
     def __init__(self) -> None:
         self._logger: logging.Logger = logging.getLogger(__name__)
-
-        self.set_game_process()
 
     def set_game_process(self) -> None:
         # wait_for_game() already ran, so it SHOULD find the game process now
@@ -47,14 +47,22 @@ class GameMonitor:
         return None
 
     @classmethod
-    def wait_for_game(cls, game_name: str) -> None:
+    def wait_for_game(cls, game_name: str) -> bool:
         if not hasattr(cls, "_logger"):
             cls._logger = logging.getLogger(__name__)
 
+        tries: int = 0
         cls._logger.info("Waiting for game process")
+
         while not cls.find_game_process(game_name):
+            if tries >= 2:
+                return False
+
             cls._logger.warning("Game process not found, waiting for 3s...")
+            tries += 1
             time.sleep(3)
+
+        return True
 
     def check_changed_focus(self) -> bool:
         changed: bool = self.user_active
@@ -70,3 +78,30 @@ class GameMonitor:
             self._logger.debug(f"Updated user_active status to {self.user_active}")
 
         return changed
+
+    def run_game_and_gimi(self) -> None:
+        if not self.find_game_process(config.GAME_PROCESS_NAME):
+            # Work-aroundy: remove the log, start GIMI and the game, waits until GIMI creates another log file
+            # Otherwise, it would read an old log, GIMI would write over it and it would bug
+            log_file: str = os.path.join(config.GIMI_DIRECTORY, config.GIMI_LOG_NAME)
+
+            if os.path.exists(log_file):
+                os.remove(log_file)
+
+            self._logger.info("Starting GIMI")
+            subprocess.Popen(
+                f'{os.path.join(config.GIMI_DIRECTORY, "3DMigoto Loader.exe")}',
+                start_new_session=True,
+                shell=True,
+                cwd=config.GIMI_DIRECTORY,
+                stdout=subprocess.DEVNULL,
+            )
+
+            self._logger.info("Starting game")
+            subprocess.Popen(
+                os.path.join(config.GAME_PATH, config.GAME_PROCESS_NAME),
+                start_new_session=True,
+                shell=True,
+                cwd=config.GAME_PATH,
+                stdout=subprocess.DEVNULL,
+            )
