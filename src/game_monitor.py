@@ -12,14 +12,19 @@ class GameMonitor:
     user_active: bool = False
 
     def __init__(self) -> None:
-        self._logger = logging.getLogger(__name__)
+        self._logger: logging.Logger = logging.getLogger(__name__)
 
+        self.set_game_process()
+
+    def set_game_process(self) -> None:
         # wait_for_game() already ran, so it SHOULD find the game process now
-        self._process = self.find_game_process(config.GAME_PROCESS_NAME)
-        assert self._process is not None, "Could not find the game process"
+        process: Optional[psutil.Process] = self.find_game_process(config.GAME_PROCESS_NAME)
+        assert process is not None, "Could not find the game process"
+
+        self._process: psutil.Process = process
         self._logger.info(f"Game process with PID {self._process.pid} found")
 
-        self._process_create_time = self._process.create_time()
+        self._process_create_time: float = self._process.create_time()
 
     def is_user_active(self) -> bool:
         return self.user_active
@@ -27,7 +32,10 @@ class GameMonitor:
     def get_process_create_time(self) -> float:
         return self._process_create_time
 
-    def get_game_process(self) -> Optional[psutil.Process]:
+    def is_process_running(self) -> bool:
+        return self._process.is_running()
+
+    def get_game_process(self) -> psutil.Process:
         return self._process
 
     @staticmethod
