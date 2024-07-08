@@ -25,7 +25,7 @@ class InteractionManager:
             self.config_parser.write(file)
 
     def get_ini_settings(
-        self, section: str, option: Optional[str] = None, *, mode: str = "normal"
+        self, section: str, option: Optional[str] = None, *, mode: str = "normal", type_: type = str
     ) -> Any:
         if mode not in ["strict", "normal"]:
             raise ValueError(f"Invalid mode: {mode}")
@@ -53,6 +53,13 @@ class InteractionManager:
 
             return None
 
+        if type_ == bool:
+            return self.config_parser.getboolean(section, option)
+        elif type_ == float:
+            return self.config_parser.getfloat(section, option)
+        elif type_ == int:
+            return self.config_parser.getint(section, option)
+
         return self.config_parser[section][option]
 
     def get_environ_or_ini(
@@ -62,12 +69,17 @@ class InteractionManager:
         default: Optional[Any] = None,
         *,
         check_file: bool = False,
+        type_: type = str,
     ) -> Any:
-        result: Any = os.getenv(name if name else section, self.get_ini_settings(section, name))
+        result: Any = os.getenv(
+            name if name else section, self.get_ini_settings(section, name, type_=type_)
+        )
 
         if result is not None:
             if check_file:
-                result = self.check_directory(result, check_file=self.log_file_name, mode="strict")
+                result = self.check_directory(
+                    result, check_file="3DMigoto Loader.exe", mode="strict"
+                )
             return result
 
         if default is None:
@@ -98,10 +110,10 @@ class InteractionManager:
             if os.path.exists(directory):
                 return directory
         else:
-            if os.path.exists(os.path.join(directory, "d3d11_log.txt")):
+            if os.path.exists(os.path.join(directory, check_file)):
                 return directory
             elif mode == "strict":
-                raise FileNotFoundError(f'The log at "{directory}" was not found')
+                raise FileNotFoundError(f'The GIMI at "{directory}" was not found')
 
         content_type: str = "directory" if not check_file else "log"
         response: bool = bool(

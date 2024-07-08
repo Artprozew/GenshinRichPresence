@@ -9,15 +9,15 @@ import PIL.Image
 import pystray
 
 from interaction_manager import InteractionManager
+from utils.data_tools import capitalize_dict
 from utils.exception_manager import exception_handler
 from utils.handle_exit import safe_exit
-from utils.data_tools import capitalize_dict
 
 # Program-related pre-configs #
 
 sys.excepthook = exception_handler
 
-# Changes the program's root/current working directory for testing purposes or if any issue occurs
+# Changes the program's root/current working directory through env for testing purposes or if any issue occurs
 MAIN_DIRECTORY: Final[str] = str(os.getenv("MAIN_DIRECTORY", os.getcwd()))
 
 if os.path.exists("logging.conf"):
@@ -28,7 +28,7 @@ else:
         format="[%(asctime)s] %(module)s (%(levelname)s): %(message)s",
     )
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(override=True)
 
 _tray_icon: pystray.Icon = pystray.Icon(
     "GenshinRichPresence",
@@ -65,32 +65,49 @@ GRP_DATA_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
 # Whether or not you want the program to check updates for data about the characters or similar (e.g. newly released characters)
 # True (always update) or False. Defaults to True
 ALWAYS_CHECK_FOR_UPDATES: Final[bool] = bool(
-    interactor.get_environ_or_ini("SETTINGS", "ALWAYS_CHECK_FOR_UPDATES", True)
+    interactor.get_environ_or_ini("SETTINGS", "ALWAYS_CHECK_FOR_UPDATES", True, type_=bool)
 )
 # Time between Discord's Rich Presence updates; You may get rate limited if this is lower than 15s (or maybe not, it's not entirely clear)
 # Time in seconds. Defaults to 15s
-RPC_UPDATE_RATE: Final[int] = int(interactor.get_environ_or_ini("SETTINGS", "RPC_UPDATE_RATE", 15))
+RPC_UPDATE_RATE: Final[int] = int(
+    interactor.get_environ_or_ini("SETTINGS", "RPC_UPDATE_RATE", 15, type_=int)
+)
 # Time to wait if no new lines is found in the log
 # Time in milliseconds. Defaults to 1.5
 LOG_TAIL_SLEEP_TIME: Final[float] = float(
-    interactor.get_environ_or_ini("SETTINGS", "LOG_TAIL_SLEEP_TIME", 1.5)
+    interactor.get_environ_or_ini("SETTINGS", "LOG_TAIL_SLEEP_TIME", 1.5, type_=float)
 )
 
 # You can change the App ID if you want to use your own application
-APP_ID: Final[int] = int(interactor.get_environ_or_ini("SETTINGS", "APP_ID", 1234834454569025538))
+APP_ID: Final[int] = int(
+    interactor.get_environ_or_ini("SETTINGS", "APP_ID", 1234834454569025538, type_=int)
+)
 # Game process name
 # Defaults to GenshinImpact.exe
 GAME_PROCESS_NAME: Final[str] = str(
     interactor.get_environ_or_ini("SETTINGS", "GAME_PROCESS_NAME", "GenshinImpact.exe")
 )
 
+START_GAME_AND_GIMI: Final[bool] = interactor.get_environ_or_ini(
+    "SETTINGS", "START_GAME_AND_GIMI", True, type_=bool
+)
+
+# Required only if START_GAME_AND_GIMI is True
+GAME_PATH: Final[str] = interactor.get_environ_or_ini("SETTINGS", "GAME_PATH", "")
+
+GIMI_LOG_NAME: Final[str] = interactor.get_environ_or_ini(
+    "SETTINGS", "GIMI_LOG_NAME", "d3d11_log.txt"
+)
+
 # Debugging
 # Not recommended to activate, unless having any problems with the program
-IS_DEBUGGING: Final[bool] = bool(interactor.get_environ_or_ini("SETTINGS", "IS_DEBUGGING", False))
+IS_DEBUGGING: Final[bool] = bool(
+    interactor.get_environ_or_ini("SETTINGS", "IS_DEBUGGING", False, type_=bool)
+)
 # Unit tests
 # May disable logging logs
 IS_TESTING: Final[bool] = bool(
-    interactor.get_environ_or_ini("SETTINGS", "IS_TESTING", "unittest" in sys.modules)
+    interactor.get_environ_or_ini("SETTINGS", "IS_TESTING", "unittest" in sys.modules, type_=bool)
 )
 
 
@@ -106,21 +123,33 @@ configRPC_configs: Final[dict[str, str]] = {
 
 # Character images
 configRPC_characters: Final[dict[str, str]] = capitalize_dict(
-    interactor.get_environ_or_ini("CHARACTER_IMG", None, {}), delimiter="_", value=False
+    interactor.get_environ_or_ini("CHARACTER_IMG", None, {}, type_=dict), delimiter="_", value=False
 )
 
 # Region images
 configRPC_regions: Final[dict[str, str]] = capitalize_dict(
-    interactor.get_environ_or_ini("REGION_IMG", None, {}), delimiter="_", value=False
+    interactor.get_environ_or_ini("REGION_IMG", None, {}, type_=dict), delimiter="_", value=False
 )
 
 
 # Program-related post-configs #
 
 if IS_DEBUGGING:
-    logging.getLogger(__name__).setLevel(logging.DEBUG)
+    # Root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler("logger.log", "w")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(module)s (%(levelname)s): %(message)s")
+    )
+    logger.addHandler(file_handler)
 
 if IS_TESTING:
     logging.disable(logging.CRITICAL)
+
+if START_GAME_AND_GIMI and not GAME_PATH:
+    raise RuntimeError("GAME_PATH is not set")
 
 _program_stop_flag: bool = False
