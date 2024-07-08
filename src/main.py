@@ -1,7 +1,6 @@
 import logging
 import logging.config
 import os
-from typing import Any
 
 import config
 from game_monitor import GameMonitor

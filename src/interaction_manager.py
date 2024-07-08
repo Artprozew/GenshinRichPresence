@@ -61,7 +61,7 @@ class InteractionManager:
         name: Optional[str],
         default: Optional[Any] = None,
         *,
-        check_file: bool = False
+        check_file: bool = False,
     ) -> Any:
         result: Any = os.getenv(name if name else section, self.get_ini_settings(section, name))
 
