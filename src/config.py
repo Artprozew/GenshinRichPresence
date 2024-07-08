@@ -11,6 +11,7 @@ import pystray
 from interaction_manager import InteractionManager
 from utils.exception_manager import exception_handler
 from utils.handle_exit import safe_exit
+from utils.data_tools import capitalize_dict
 
 # Program-related pre-configs #
 
@@ -104,12 +105,12 @@ configRPC_configs: Final[dict[str, str]] = {
 }
 
 # Character images
-configRPC_characters: Final[dict[str, str]] = interactor.capitalize_dict(
+configRPC_characters: Final[dict[str, str]] = capitalize_dict(
     interactor.get_environ_or_ini("CHARACTER_IMG", None, {}), delimiter="_", value=False
 )
 
 # Region images
-configRPC_regions: Final[dict[str, str]] = interactor.capitalize_dict(
+configRPC_regions: Final[dict[str, str]] = capitalize_dict(
     interactor.get_environ_or_ini("REGION_IMG", None, {}), delimiter="_", value=False
 )
 

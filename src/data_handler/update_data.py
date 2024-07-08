@@ -3,8 +3,11 @@ import os
 import sys
 from configparser import ConfigParser
 from typing import Any, Optional
+import time
 
 import requests
+
+from utils.data_tools import separate_with
 
 try:
     import config
@@ -40,35 +43,14 @@ def update_character(name: str, ini_file: str) -> bool:
     config_parser: ConfigParser = ConfigParser()
     config_parser.read(ini_file)
 
-    names = []
-    lowercases = ""
-    uppercase = ""
-
-    # Draft/Workaroundy: Places underscore between uppercased letters
-    # e.g. HuTao as Hu_Tao or AmberCN as Amber_CN
-    for idx, char in enumerate(name):
-        if char.isupper():
-            if name[idx - 1] == uppercase:
-                lowercases += char
-                continue
-
-            if lowercases:
-                names.append(f"{uppercase}{lowercases}")
-
-            lowercases = ""
-            uppercase = char
-        else:
-            lowercases += char
-
-    names.append(f"{uppercase}{lowercases}")
-    name = "_".join(names)
+    separate_with(name, "_")
 
     texture_name: str = f"TextureOverride__{name}__VertexLimitRaise"
 
     if config_parser.has_section(texture_name):
         print(f"The character {name} is already added. Skipping...")
 
-        os.system("pause")
+        time.sleep(2)
         return False
 
     try:
@@ -84,7 +66,7 @@ def update_character(name: str, ini_file: str) -> bool:
         print(f"Could not add the character {name}\nStack trace:")
         traceback.print_exc()
 
-        os.system("pause")
+        time.sleep(2)
         return False
 
     print(f'The character "{name}" was added')
