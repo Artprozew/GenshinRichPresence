@@ -1,8 +1,10 @@
-import signal
 import atexit
-import sys
-from typing import Callable, Any, Optional
+import logging
+import signal
 from types import FrameType
+from typing import Any, Callable, Optional
+
+import config
 
 
 def handle_exit_hook(
@@ -19,4 +21,8 @@ def handle_exit_hook(
 
 
 def safe_exit() -> None:
-    sys.exit(0)
+    logging.getLogger(__name__).warning("Stopping program")
+    config._program_stop_flag = True
+    config._tray_icon.stop()
+    # Graceful exits only seems to work if we just stop the tray icon and the log loop
+    # i.e. sys.exit(0) would error

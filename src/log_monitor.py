@@ -1,10 +1,11 @@
-from io import TextIOWrapper
-from typing import Generator, Any, Final, Optional
-from types import FrameType
+import logging
 import os
 import time
+from io import TextIOWrapper
+from types import FrameType
+from typing import Any, Final, Generator, Optional
+
 import config
-import logging
 from rich_presence import DiscordRichPresence
 from utils import handle_exit
 
@@ -15,24 +16,32 @@ class LogMonitor:
 
         self.rpc: DiscordRichPresence = rpc
 
-        self._terminated_flag: bool = False
         handle_exit.handle_exit_hook(self._teardown, 0, None)
 
     def _teardown(self, _signal_number: int, _stack_frame: Optional[FrameType]) -> None:
-        # May be called two times
-        if not self._terminated_flag:
+        config._program_stop_flag = True
+
+        if hasattr(self, "_log_file") and self._log_file is not None and not self._log_file.closed:
             self._logger.warning("Closing log file and shutting down")
-
-        self._terminated_flag = True
-
-        if self._log_file is not None and not self._log_file.closed:
             self._log_file.close()
 
-    def start(self, _log_dir: str) -> None:
-        # Won't open at constructor because mypy yells at us
+    def start(self) -> None:
+        if config.START_GAME_AND_GIMI:
+            self._logger.debug("Waiting for log creation")
+            tries = 0
+
+            while not os.path.exists(os.path.join(config.GIMI_DIRECTORY, config.GIMI_LOG_NAME)):
+                if tries >= 60 or config._program_stop_flag:
+                    self._logger.debug("Log was not found. exiting")
+                    return
+
+                tries += 1
+                time.sleep(1)
+
         self._logger.info("Opening log file")
-        self._log_file: TextIOWrapper = self.open_log_file(_log_dir)
-        del _log_dir
+        self._log_file: TextIOWrapper = self.open_log_file(
+            os.path.join(config.GIMI_DIRECTORY, config.GIMI_LOG_NAME)
+        )
 
         if self.get_file_size() > 5000000:
             self.seek_back_n_bytes_from_end(5000000)
@@ -61,7 +70,7 @@ class LogMonitor:
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
-            if self._terminated_flag:
+            if config._program_stop_flag:
                 break
 
             line: str = self._log_file.readline()
@@ -73,6 +82,10 @@ class LogMonitor:
             # If there's no new lines, will check for updates, preventing outdated info
             if self.rpc.can_update_rpc():
                 self.rpc.update_rpc()
+
+            if not self.rpc.game_monitor.is_process_running():
+                self._logger.debug("Game proccess is not running, exiting...")
+                handle_exit.safe_exit()
 
             time.sleep(config.LOG_TAIL_SLEEP_TIME)
 
@@ -87,35 +100,32 @@ class LogMonitor:
             ):
                 continue
 
-            # Examples to be matched: TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\__Fontaine__LumitoileIB matched (...) OR
-            # TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\ClorindeVertexLimitRaise matched (...)
-            asset_line: list[str] = line.split("PlayableCharacterData.ini\\")
+            # Example lines from the log and their expected output:
+            # "TextureOverride\Mods\Anything\RichPresenceData\WorldData.ini\__Fontaine__LumitoileIB (...)" as "Fontaine" OR
+            # "TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\__Hu_Tao__VertexLimitRaise (...)" as "Hu Tao"
+            ini_name: str
+            asset_name: str
+            ini_name, asset_name = line.split("RichPresenceData\\")[1].split("\\", 2)
 
-            # if Asset is a Playable Character
-            if len(asset_line) > 1:
-                # Ignore everything after "VertexLimitRaise" and keep just the character name
-                character: str = asset_line[1].split("VertexLimitRaise")[0]
-                if self.rpc.current_character == character:
+            # Gets only the asset name e.g. "__Sumeru_Forest__(...)" as "Sumeru Forest"
+            asset_name = asset_name.split("__", 2)[1].replace("_", " ")
+
+            if ini_name == "PlayableCharacterData.ini":
+                if self.rpc.current_character == asset_name:
                     continue
 
-                self.rpc.current_character = character
+                self.rpc.current_character = asset_name
                 self.rpc.updatable = True
                 self._logger.debug(f"Updated current_character to {self.rpc.current_character}")
-                continue
+            else:
+                # WorldData.ini
+                if self.rpc.current_region == asset_name:
+                    continue
 
-            # if Asset is not a Playable Character (so it is a region, because currently we only scrape Characters and Regions)
-            # Gets the name of the region (between double underscores) after the .ini file name
-            region: str = asset_line[0].split("WorldData.ini\\")[1].split("__", 2)[1]
-            # Replace single underscore for regions like Sumeru_Forest
-            region = region.replace("_", " ")
-
-            if self.rpc.current_region == region:
-                continue
-
-            self.rpc.previous_region = self.rpc.current_region
-            self.rpc.current_region = region
-            self.rpc.updatable = True
-            self._logger.debug(
-                f"Updated region to {self.rpc.current_region}, "
-                f"hash: {asset_line[0].split('hash=')[1].split(' ')[0]}"
-            )
+                self.rpc.previous_region = self.rpc.current_region
+                self.rpc.current_region = asset_name
+                self.rpc.updatable = True
+                self._logger.debug(
+                    f"Updated region to {self.rpc.current_region}, "
+                    f"hash: {line.split('hash=')[1].split(' ')[0]}"
+                )
