@@ -62,32 +62,36 @@ GRP_DATA_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
     interactor.find_folder("RichPresenceData", os.path.join(GIMI_DIRECTORY, "Mods")),
 )
 
-# Whether or not you want the program to check updates for data about the characters or similar (e.g. newly released characters)
+# Whether or not you want the program to check for data updates about characters or similar (e.g. newly released characters)
 # True (always update) or False. Defaults to True
 ALWAYS_CHECK_FOR_UPDATES: Final[bool] = bool(
     interactor.get_environ_or_ini("SETTINGS", "ALWAYS_CHECK_FOR_UPDATES", True, type_=bool)
 )
+
 # Time between Discord's Rich Presence updates; You may get rate limited if this is lower than 15s (or maybe not, it's not entirely clear)
 # Time in seconds. Defaults to 15s
 RPC_UPDATE_RATE: Final[int] = int(
     interactor.get_environ_or_ini("SETTINGS", "RPC_UPDATE_RATE", 15, type_=int)
 )
+
 # Time to wait if no new lines is found in the log
-# Time in milliseconds. Defaults to 1.5
+# Time in seconds. Defaults to 1.5s
 LOG_TAIL_SLEEP_TIME: Final[float] = float(
     interactor.get_environ_or_ini("SETTINGS", "LOG_TAIL_SLEEP_TIME", 1.5, type_=float)
 )
 
-# You can change the App ID if you want to use your own application
+# App ID for the Discord Rich Presence application, can be changed if needed
 APP_ID: Final[int] = int(
     interactor.get_environ_or_ini("SETTINGS", "APP_ID", 1234834454569025538, type_=int)
 )
+
 # Game process name
 # Defaults to GenshinImpact.exe
 GAME_PROCESS_NAME: Final[str] = str(
     interactor.get_environ_or_ini("SETTINGS", "GAME_PROCESS_NAME", "GenshinImpact.exe")
 )
 
+# Starts the game and GIMI automatically on initialization
 START_GAME_AND_GIMI: Final[bool] = interactor.get_environ_or_ini(
     "SETTINGS", "START_GAME_AND_GIMI", True, type_=bool
 )
@@ -104,6 +108,7 @@ GIMI_LOG_NAME: Final[str] = interactor.get_environ_or_ini(
 IS_DEBUGGING: Final[bool] = bool(
     interactor.get_environ_or_ini("SETTINGS", "IS_DEBUGGING", False, type_=bool)
 )
+
 # Unit tests
 # May disable logging logs
 IS_TESTING: Final[bool] = bool(

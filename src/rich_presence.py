@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from types import FrameType
-from typing import Any, Union
+from typing import Any, Final, Union
 
 import pypresence
 
@@ -28,7 +28,8 @@ class DiscordRichPresence(pypresence.Presence):
     current_character: str = "Unknown"
     current_weapon: str = "Unknown"
 
-    game_name: str = "genshin"
+    game_name: Final[str] = "Genshin Impact"
+    game_image: Final[str] = "genshin"
 
     last_update: float = time.time() - 10000
     updatable: bool = True
@@ -77,13 +78,13 @@ class DiscordRichPresence(pypresence.Presence):
 
     def pre_parse_configs(self) -> None:
         variables: dict[str, str] = {
-            "user_activity": "self.is_user_active",
-            "region": "current_region",
             "character": "current_character",
-            "weapon": "current_weapon",
-            "game": "game_name",
             "character_image": "character_image",
+            "region": "current_region",
             "region_image": "region_image",
+            "game_name": "game_name",
+            "game_image": "game_image",
+            "user_activity": "self.is_user_active",
         }
         compiled_regex: re.Pattern[str] = re.compile(r"%\((.*?)\)")
 
