@@ -69,18 +69,19 @@ class InteractionManager:
         name: Optional[str],
         default: Optional[Any] = None,
         *,
-        check_file: bool = False,
+        check_path: Union[str, bool, None] = None,
         type_: type = str,
     ) -> Any:
         result: Any = os.getenv(
             name if name else section, self.get_ini_settings(section, name, type_=type_)
         )
 
+        if check_path is True:
+            self.check_directory(result if result is not None else default)
+        elif isinstance(check_path, str):
+            self.check_directory(result if result is not None else default, check_file=check_path)
+
         if result is not None:
-            if check_file:
-                result = self.check_directory(
-                    result, check_file="3DMigoto Loader.exe", mode="strict"
-                )
             return result
 
         if default is None:
@@ -93,16 +94,18 @@ class InteractionManager:
 
     @staticmethod
     def check_directory(
-        directory: str, *, check_file: Optional[str] = None, mode: str = "normal"
+        directory: str, *, check_file: Optional[str] = None, mode: str = "strict"
     ) -> str:
         if not check_file:
             if os.path.exists(directory):
                 return directory
+            elif mode == "strict":
+                raise FileNotFoundError(f'The "{directory}" was not found')
         else:
             if os.path.exists(os.path.join(directory, check_file)):
                 return directory
             elif mode == "strict":
-                raise FileNotFoundError(f'The GIMI at "{directory}" was not found')
+                raise FileNotFoundError(f'The file "{check_file}" at "{directory}" was not found')
 
         content_type: str = "directory" if not check_file else "log"
         response: bool = bool(

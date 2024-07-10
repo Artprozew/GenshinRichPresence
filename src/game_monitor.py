@@ -103,9 +103,9 @@ class GameMonitor:
 
             self._logger.info("Starting game")
             subprocess.Popen(
-                os.path.join(config.GAME_PATH, config.GAME_PROCESS_NAME),
+                config.GAME_EXE_PATH,
                 start_new_session=True,
                 shell=True,
-                cwd=config.GAME_PATH,
+                cwd=os.path.dirname(config.GAME_EXE_PATH),
                 stdout=subprocess.DEVNULL,
             )
