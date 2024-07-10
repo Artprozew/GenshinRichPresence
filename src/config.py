@@ -59,7 +59,13 @@ GIMI_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
 GRP_DATA_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
     "SETTINGS",
     "GRP_DATA_DIRECTORY",
-    interactor.find_folder("RichPresenceData", os.path.join(GIMI_DIRECTORY, "Mods")),
+    interactor.set_up_rpc_data_folder(
+        "RichPresenceData",
+        os.path.join(MAIN_DIRECTORY, "data"),
+        os.path.join(GIMI_DIRECTORY, "Mods"),
+        COPY_REQUIRED_DATA,
+    ),
+    check_path="PlayableCharacterData.ini",
 )
 
 # Whether or not you want the program to check for data updates about characters or similar (e.g. newly released characters)
