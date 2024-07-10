@@ -74,7 +74,7 @@ GAME_EXE_PATH: Final[str] = interactor.get_environ_or_ini(
     "SETTINGS",
     "GAME_EXE_PATH",
     None if START_GAME_AND_GIMI else "",
-    check_path=True,
+    check_path=True if START_GAME_AND_GIMI else False,
 )
 
 # If set to True, the program will copy the .ini data files to the GIMI's Mods folder
