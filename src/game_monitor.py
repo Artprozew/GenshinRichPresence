@@ -59,7 +59,8 @@ class GameMonitor:
         cls._logger.info("Waiting for game process")
 
         while not cls.find_game_process(game_name):
-            if tries >= 2:
+            if tries >= 20 or config._program_stop_flag:
+                cls._logger.debug("Game process was not found. exiting")
                 return False
 
             cls._logger.warning("Game process not found, waiting for 3s...")

@@ -87,8 +87,8 @@ def main() -> None:
         print("\nPlease write here the path to the RichPresenceData in your GIMI Mods folder")
         grp_dir = input(" > ")
 
-    if os.path.exists(f"{grp_dir}\\RichPresenceData"):
-        grp_dir += "\\RichPresenceData"
+    if os.path.exists(os.path.join(grp_dir, "RichPresenceData")):
+        grp_dir = os.path.join(grp_dir, "RichPresenceData")
 
     if not os.path.exists(grp_dir):
         print("Could not locate the folder")
@@ -105,7 +105,7 @@ def main() -> None:
             break
 
     print("\nFinding characters to add\n")
-    ini_file = f"{grp_dir}\\PlayableCharacterData.ini"
+    ini_file = os.path.join(grp_dir, "PlayableCharacterData.ini")
 
     if os.path.isfile(ini_file):
         os.remove(ini_file)

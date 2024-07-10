@@ -29,6 +29,7 @@ class GenshinRichPresence:
 
     def start(self) -> None:
         if not self._game_monitor.wait_for_game(config.GAME_PROCESS_NAME):
+            safe_exit()
             return
 
         self._game_monitor.set_game_process()
