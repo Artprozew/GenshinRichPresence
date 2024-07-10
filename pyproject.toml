@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "GenshinRichPresence"
-version = "0.1.1-beta"
+version = "1.0.0"
 description = "Discord Rich Presence for Genshin Impact"
 authors = ["Artprozew <artprozew@gmail.com>"]
 license = "MIT"
