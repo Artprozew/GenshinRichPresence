@@ -59,7 +59,8 @@ class GameMonitor:
         cls._logger.info("Waiting for game process")
 
         while not cls.find_game_process(game_name):
-            if tries >= 2:
+            if tries >= 20 or config._program_stop_flag:
+                cls._logger.debug("Game process was not found. exiting")
                 return False
 
             cls._logger.warning("Game process not found, waiting for 3s...")
@@ -103,9 +104,9 @@ class GameMonitor:
 
             self._logger.info("Starting game")
             subprocess.Popen(
-                os.path.join(config.GAME_PATH, config.GAME_PROCESS_NAME),
+                config.GAME_EXE_PATH,
                 start_new_session=True,
                 shell=True,
-                cwd=config.GAME_PATH,
+                cwd=os.path.dirname(config.GAME_EXE_PATH),
                 stdout=subprocess.DEVNULL,
             )

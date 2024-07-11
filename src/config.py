@@ -51,15 +51,48 @@ interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"), "d3d
 # Path to your 3DMigoto (e.g. C:\3dmigoto\)
 # This is the only really required configuration that can be set through the config.ini
 GIMI_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
-    "SETTINGS", "GIMI_DIRECTORY", check_file=True
+    "SETTINGS", "GIMI_DIRECTORY", check_path="3DMigoto Loader.exe"
 )
 
-# Path to RichPresenceData folder on GIMI Mods directory (e.g. C:\3dmigoto\Mods\Others\RichPresenceData\)
-# There's no need to set it anymore, unless any problem is occurring, as the program will try to find that folder automatically through GIMI_DIRECTORY
+GIMI_LOG_NAME: Final[str] = interactor.get_environ_or_ini(
+    "SETTINGS", "GIMI_LOG_NAME", "d3d11_log.txt"
+)
+
+# Game process name
+# Defaults to GenshinImpact.exe
+GAME_PROCESS_NAME: Final[str] = str(
+    interactor.get_environ_or_ini("SETTINGS", "GAME_PROCESS_NAME", "GenshinImpact.exe")
+)
+
+# Starts the game and GIMI automatically on initialization
+START_GAME_AND_GIMI: Final[bool] = interactor.get_environ_or_ini(
+    "SETTINGS", "START_GAME_AND_GIMI", True, type_=bool
+)
+
+# Required only if START_GAME_AND_GIMI is True
+GAME_EXE_PATH: Final[str] = interactor.get_environ_or_ini(
+    "SETTINGS",
+    "GAME_EXE_PATH",
+    None if START_GAME_AND_GIMI else "",
+    check_path=True if START_GAME_AND_GIMI else False,
+)
+
+# If set to True, the program will copy the .ini data files to the GIMI's Mods folder
+COPY_REQUIRED_DATA: Final[bool] = interactor.get_environ_or_ini(
+    "SETTINGS", "COPY_REQUIRED_DATA", True, type_=bool
+)
+
+# Finds/sets the path to RichPresenceData folder on GIMI Mods directory (e.g. C:\3dmigoto\Mods\Others\RichPresenceData\)
 GRP_DATA_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
     "SETTINGS",
     "GRP_DATA_DIRECTORY",
-    interactor.find_folder("RichPresenceData", os.path.join(GIMI_DIRECTORY, "Mods")),
+    interactor.set_up_rpc_data_folder(
+        "RichPresenceData",
+        os.path.join(MAIN_DIRECTORY, "data"),
+        os.path.join(GIMI_DIRECTORY, "Mods"),
+        COPY_REQUIRED_DATA,
+    ),
+    check_path="PlayableCharacterData.ini",
 )
 
 # Whether or not you want the program to check for data updates about characters or similar (e.g. newly released characters)
@@ -85,23 +118,6 @@ APP_ID: Final[int] = int(
     interactor.get_environ_or_ini("SETTINGS", "APP_ID", 1234834454569025538, type_=int)
 )
 
-# Game process name
-# Defaults to GenshinImpact.exe
-GAME_PROCESS_NAME: Final[str] = str(
-    interactor.get_environ_or_ini("SETTINGS", "GAME_PROCESS_NAME", "GenshinImpact.exe")
-)
-
-# Starts the game and GIMI automatically on initialization
-START_GAME_AND_GIMI: Final[bool] = interactor.get_environ_or_ini(
-    "SETTINGS", "START_GAME_AND_GIMI", True, type_=bool
-)
-
-# Required only if START_GAME_AND_GIMI is True
-GAME_PATH: Final[str] = interactor.get_environ_or_ini("SETTINGS", "GAME_PATH", "")
-
-GIMI_LOG_NAME: Final[str] = interactor.get_environ_or_ini(
-    "SETTINGS", "GIMI_LOG_NAME", "d3d11_log.txt"
-)
 
 # Debugging
 # Not recommended to activate, unless having any problems with the program
@@ -153,8 +169,5 @@ if IS_DEBUGGING:
 
 if IS_TESTING:
     logging.disable(logging.CRITICAL)
-
-if START_GAME_AND_GIMI and not GAME_PATH:
-    raise RuntimeError("GAME_PATH is not set")
 
 _program_stop_flag: bool = False
