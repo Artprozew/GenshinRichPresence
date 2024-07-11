@@ -153,6 +153,14 @@ configRPC_regions: Final[dict[str, str]] = capitalize_dict(
 )
 
 
+# Additional checks
+
+if START_GAME_AND_GIMI and not os.path.isfile(GAME_EXE_PATH):
+    raise RuntimeError(
+        'The "GAME_EXE_PATH" must be the path where your game executable is located.'
+    )
+
+
 # Program-related post-configs #
 
 if IS_DEBUGGING:
