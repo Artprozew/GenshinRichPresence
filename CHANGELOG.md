@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-07-10
+## [v1.0.1] - 2024-07-11
+
+### Fixed
+
+- Wrong encoding when reading `.ini` files which was causing issues if any directory had accents, UTF-8 is now preferred.
+- If `START_GAME_AND_GIMI` is set to True, checks if the `GAME_EXE_PATH` is an executable file.
+
+## [v1.0.0] - 2024-07-10
 
 First full release!
 
@@ -22,7 +29,7 @@ This release is a fully refactored and more modular codebase that introduces eve
 - New released characters can be added automatically to the character data
 
 
-## [0.1.1-beta] - 2024-05-23
+## [v0.1.1-beta] - 2024-05-23
 
 Initial pre-release!
 This pre-release introduces the basic core functionality: Character, Region and Inactivity statuses.
