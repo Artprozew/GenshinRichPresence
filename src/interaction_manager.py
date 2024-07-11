@@ -37,7 +37,7 @@ class InteractionManager:
 
             open(self.ini_file, "w").close()
 
-        self.config_parser.read(self.ini_file)
+        self.config_parser.read(self.ini_file, "utf-8")
 
         if not self.config_parser.has_section(section):
             if mode == "strict":
