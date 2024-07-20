@@ -43,7 +43,7 @@ def separate_with(string: str, separator: str) -> str:
     # e.g. HuTao as Hu_Tao or AmberCN as Amber_CN
     for idx, char in enumerate(string):
         if char.isupper():
-            if string[idx - 1] == uppercase:
+            if idx != 0 and string[idx - 1] == uppercase:
                 lowercases += char
                 continue
 
