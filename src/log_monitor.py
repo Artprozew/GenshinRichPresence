@@ -105,10 +105,16 @@ class LogMonitor:
             # "TextureOverride\Mods\Anything\RichPresenceData\PlayableCharacterData.ini\__Hu_Tao__VertexLimitRaise (...)" as "Hu Tao"
             ini_name: str
             asset_name: str
-            ini_name, asset_name = line.split("RichPresenceData\\")[1].split("\\", 2)
 
-            # Gets only the asset name e.g. "__Sumeru_Forest__(...)" as "Sumeru Forest"
-            asset_name = asset_name.split("__", 2)[1].replace("_", " ")
+            try:
+                ini_name, asset_name = line.split("RichPresenceData\\")[1].split("\\", 2)
+
+                # Gets only the asset name e.g. "__Sumeru_Forest__(...)" as "Sumeru Forest"
+                asset_name = asset_name.split("__", 2)[1].replace("_", " ")
+            except IndexError:
+                self._logger.warning("Exception catched while splitting the log line. Ignoring")
+                self._logger.debug(f"Line: {line}")
+                continue
 
             if ini_name == "PlayableCharacterData.ini":
                 if self.rpc.current_character == asset_name:
@@ -125,7 +131,10 @@ class LogMonitor:
                 self.rpc.previous_region = self.rpc.current_region
                 self.rpc.current_region = asset_name
                 self.rpc.updatable = True
-                self._logger.debug(
-                    f"Updated region to {self.rpc.current_region}, "
-                    f"hash: {line.split('hash=')[1].split(' ')[0]}"
-                )
+                try:
+                    self._logger.debug(
+                        f"Updated region to {self.rpc.current_region}, "
+                        f"hash: {line.split('hash=')[1].split(' ')[0]}"
+                    )
+                except IndexError:
+                    pass

@@ -55,7 +55,12 @@ class DiscordRichPresence(pypresence.Presence):
     def _teardown(self, _signal_number: int, _stack_frame: Union[FrameType, None]) -> None:
         if self.connected:
             self._logger.warning("Clearing Rich Presence")
-            self.clear()
+
+            try:
+                self.clear()
+            except pypresence.exceptions.PipeClosed:
+                pass
+
             self.connected = False
 
     def connect(self) -> None:
@@ -128,15 +133,18 @@ class DiscordRichPresence(pypresence.Presence):
             self._logger.debug("Setting region as the_chasm instead of liyue to workaround #27")
             self.current_region = "The Chasm"
 
-        self.update(
-            start=self.game_monitor.get_process_create_time(),
-            state=self.get_parsed_configs("state"),
-            details=self.get_parsed_configs("details"),
-            large_image=self.get_parsed_configs("large_image"),
-            small_image=self.get_parsed_configs("small_image"),
-            large_text=self.get_parsed_configs("large_text"),
-            small_text=self.get_parsed_configs("small_text"),
-        )
+        try:
+            self.update(
+                start=self.game_monitor.get_process_create_time(),
+                state=self.get_parsed_configs("state"),
+                details=self.get_parsed_configs("details"),
+                large_image=self.get_parsed_configs("large_image"),
+                small_image=self.get_parsed_configs("small_image"),
+                large_text=self.get_parsed_configs("large_text"),
+                small_text=self.get_parsed_configs("small_text"),
+            )
+        except pypresence.exceptions.PipeClosed:
+            self.connect()
 
         self.set_last_update()
         self.updatable = False
