@@ -7,12 +7,34 @@ from typing import Any, Optional
 
 import requests
 
-from utils.data_tools import separate_with
-
 try:
     import config
+    from utils.data_tools import separate_with
 except ImportError:
-    pass
+    # Work-around: Duplicate code from utils.data_tools
+    def separate_with(string: str, separator: str) -> str:
+        names: list[str] = []
+        lowercases: str = ""
+        uppercase: str = ""
+
+        for idx, char in enumerate(string):
+            if char.isupper():
+                if idx != 0 and string[idx - 1] == uppercase:
+                    lowercases += char
+                    continue
+
+                if lowercases:
+                    names.append(f"{uppercase}{lowercases}")
+
+                lowercases = ""
+                uppercase = char
+            else:
+                lowercases += char
+
+        names.append(f"{uppercase}{lowercases}")
+        string = separator.join(names)
+
+        return string
 
 
 def update_character(name: str, ini_file: str) -> bool:
@@ -43,7 +65,7 @@ def update_character(name: str, ini_file: str) -> bool:
     config_parser: ConfigParser = ConfigParser()
     config_parser.read(ini_file)
 
-    separate_with(name, "_")
+    name = separate_with(name, "_")
 
     texture_name: str = f"TextureOverride__{name}__VertexLimitRaise"
 

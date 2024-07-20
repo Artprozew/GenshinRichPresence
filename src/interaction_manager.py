@@ -6,14 +6,17 @@ from typing import Any, Optional, Union
 
 
 class InteractionManager:
-    def __init__(self, ini_file: str, log_file_name: str):
+    def __init__(self, ini_file: str):
         self._logger = logging.getLogger(__name__)
 
         self.ini_file: str = ini_file
-        self.log_file_name: str = log_file_name
 
         # Creates a case-sensitive ConfigParser
-        self.config_parser: ConfigParser = ConfigParser()
+        # and accepts comments "as values" (also duplicate values)
+        # this may have side effects, e.g. some blank lines are not preserved
+        self.config_parser: ConfigParser = ConfigParser(
+            comment_prefixes="/", allow_no_value=True, strict=False
+        )
         self.config_parser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
 
     def set_ini_option(self, section: str, option: str, value: Any) -> None:
@@ -22,7 +25,7 @@ class InteractionManager:
 
         self.config_parser[section][option] = value
 
-        with open(self.ini_file, "w") as file:
+        with open(self.ini_file, "w", encoding="utf-8") as file:
             self.config_parser.write(file)
 
     def get_ini_settings(
@@ -133,11 +136,16 @@ class InteractionManager:
         return None
 
     def set_up_rpc_data_folder(
-        self, folder_name: str, datas_folder: str, mods_folder: str, copy_data: bool
+        self,
+        folder_name: str,
+        datas_folder: str,
+        mods_folder: str,
+        copy_data: bool,
+        force_update: bool = False,
     ) -> str:
         rpc_folder: Optional[str] = self.find_folder(folder_name, mods_folder)
 
-        if rpc_folder:
+        if rpc_folder and not force_update:
             return rpc_folder
 
         if not copy_data:
@@ -160,18 +168,6 @@ class InteractionManager:
         shutil.copy(os.path.join(datas_folder, "world", "WorldData.ini"), rpc_folder)
 
         return rpc_folder
-
-    def get_check_save_ini(self, section: str, option: str, *, mode: str = "strict") -> str:
-        self._logger.info("Finding and reading config.ini")
-        argument: str = str(self.get_ini_settings(section, option, mode=mode))
-
-        self._logger.info("Checking correct directory")
-        directory: str = self.check_directory(argument, check_file=self.log_file_name, mode=mode)
-
-        self._logger.info("Saving directory to config.ini")
-        self.set_ini_option(section, option, directory)
-
-        return directory
 
     @staticmethod
     def wait_input_response(message: str, *, question: bool = True) -> Union[str, bool]:

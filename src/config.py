@@ -39,7 +39,9 @@ _tray_icon: pystray.Icon = pystray.Icon(
 
 _tray_icon.run_detached()
 
-interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"), "d3d11_log.txt")
+interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"))
+
+_VERSION: Final[str] = interactor.get_ini_settings("INTERNAL", "Version")
 
 # External configs #
 
@@ -91,6 +93,7 @@ GRP_DATA_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
         os.path.join(MAIN_DIRECTORY, "data"),
         os.path.join(GIMI_DIRECTORY, "Mods"),
         COPY_REQUIRED_DATA,
+        not interactor.get_ini_settings("INTERNAL", "Updated_data", type_=bool),
     ),
     check_path="PlayableCharacterData.ini",
 )
@@ -177,5 +180,7 @@ if IS_DEBUGGING:
 
 if IS_TESTING:
     logging.disable(logging.CRITICAL)
+
+interactor.set_ini_option("INTERNAL", "Updated_data", "True")
 
 _program_stop_flag: bool = False
