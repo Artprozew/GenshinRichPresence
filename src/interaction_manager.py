@@ -132,11 +132,16 @@ class InteractionManager:
         return None
 
     def set_up_rpc_data_folder(
-        self, folder_name: str, datas_folder: str, mods_folder: str, copy_data: bool
+        self,
+        folder_name: str,
+        datas_folder: str,
+        mods_folder: str,
+        copy_data: bool,
+        force_update: bool = False,
     ) -> str:
         rpc_folder: Optional[str] = self.find_folder(folder_name, mods_folder)
 
-        if rpc_folder:
+        if rpc_folder and not force_update:
             return rpc_folder
 
         if not copy_data:
