@@ -43,7 +43,7 @@ def update_character(name: str, ini_file: str) -> bool:
     config_parser: ConfigParser = ConfigParser()
     config_parser.read(ini_file)
 
-    separate_with(name, "_")
+    name = separate_with(name, "_")
 
     texture_name: str = f"TextureOverride__{name}__VertexLimitRaise"
 
