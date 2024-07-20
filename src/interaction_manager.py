@@ -12,7 +12,11 @@ class InteractionManager:
         self.ini_file: str = ini_file
 
         # Creates a case-sensitive ConfigParser
-        self.config_parser: ConfigParser = ConfigParser()
+        # and accepts comments "as values" (also duplicate values)
+        # this may have side effects, e.g. some blank lines are not preserved
+        self.config_parser: ConfigParser = ConfigParser(
+            comment_prefixes="/", allow_no_value=True, strict=False
+        )
         self.config_parser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
 
     def set_ini_option(self, section: str, option: str, value: Any) -> None:
@@ -21,7 +25,7 @@ class InteractionManager:
 
         self.config_parser[section][option] = value
 
-        with open(self.ini_file, "w") as file:
+        with open(self.ini_file, "w", encoding="utf-8") as file:
             self.config_parser.write(file)
 
     def get_ini_settings(
