@@ -39,7 +39,7 @@ _tray_icon: pystray.Icon = pystray.Icon(
 
 _tray_icon.run_detached()
 
-interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"), "d3d11_log.txt")
+interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"))
 
 # External configs #
 
