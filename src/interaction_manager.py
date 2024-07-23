@@ -11,8 +11,10 @@ class InteractionManager:
 
         self.ini_file: str = ini_file
 
-        # Creates a case-sensitive ConfigParser
-        # and accepts comments "as values" (also duplicate values)
+        if not os.path.exists(self.ini_file):
+            raise FileNotFoundError(f'The file "{self.ini_file}" was not found')
+
+        # Creates a case-sensitive ConfigParser and accepts comments "as values" (also duplicate values)
         # this may have side effects, e.g. some blank lines are not preserved
         self.config_parser: ConfigParser = ConfigParser(
             comment_prefixes="/", allow_no_value=True, strict=False
