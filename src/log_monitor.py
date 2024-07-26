@@ -86,7 +86,7 @@ class LogMonitor:
                 self.rpc.update_rpc()
 
             if not self.rpc.game_monitor.is_process_running():
-                self._logger.debug("Game proccess is not running, exiting...")
+                self._logger.info("Game proccess is not running, exiting...")
                 handle_exit.safe_exit()
 
             time.sleep(config.LOG_TAIL_SLEEP_TIME)
