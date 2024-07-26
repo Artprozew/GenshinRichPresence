@@ -197,3 +197,26 @@ class InteractionManager:
                 return True
             elif response == "n" or response == "no":
                 return False
+
+    def handle_backup_configs(self, ini_file: str) -> None:
+        if not os.path.isfile(ini_file):
+            return
+
+        self._logger.info("Applying backup file")
+
+        backup_configparser: ConfigParser = ConfigParser(
+            comment_prefixes="/", allow_no_value=True, strict=False, interpolation=None
+        )
+        backup_configparser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
+
+        self.config_parser.read(self.ini_file, "utf-16")
+        backup_configparser.read(ini_file, "utf-16")
+
+        for section in backup_configparser.sections():
+            if section == "INTERNAL":
+                continue
+
+            for key, value in backup_configparser.items(section):
+                self.set_ini_option(section, key, value)
+
+        os.remove(ini_file)
