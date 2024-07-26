@@ -217,6 +217,9 @@ class InteractionManager:
                 continue
 
             for key, value in backup_configparser.items(section):
+                if key in ("GIMI_DIRECTORY", "START_GAME_AND_GIMI", "GAME_EXE_PATH"):
+                    continue
+
                 self.set_ini_option(section, key, value)
 
         os.remove(ini_file)
