@@ -41,6 +41,8 @@ _tray_icon.run_detached()
 
 interactor = InteractionManager(os.path.join(MAIN_DIRECTORY, "config.ini"))
 
+interactor.handle_backup_configs(os.path.join(MAIN_DIRECTORY, "backup_config.ini"))
+
 _VERSION: Final[str] = interactor.get_ini_settings("INTERNAL", "Version")
 
 # External configs #
