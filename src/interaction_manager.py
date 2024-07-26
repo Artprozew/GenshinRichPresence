@@ -76,26 +76,35 @@ class InteractionManager:
         *,
         check_path: Union[str, bool, None] = None,
         type_: type = str,
+        dirname: bool = False,
     ) -> Any:
         result: Any = os.getenv(
             name if name else section, self.get_ini_settings(section, name, type_=type_)
         )
 
-        if check_path is True:
-            self.check_directory(result if result is not None else default)
-        elif isinstance(check_path, str):
-            self.check_directory(result if result is not None else default, check_file=check_path)
+        if result is None:
+            if default is None:
+                raise RuntimeError(
+                    "Missing required configuration. "
+                    f"Please set it on your config.ini: [{section}]{': ' + name if name else ''}"
+                )
 
-        if result is not None:
+            result = default
+
+        if not check_path or not isinstance(result, str):
             return result
 
-        if default is None:
-            raise RuntimeError(
-                "Missing required configuration. "
-                f"Please set it on your config.ini: [{section}]{': ' + name if name else ''}"
-            )
+        if dirname:
+            _, extension = os.path.splitext(result)
 
-        return default
+            if extension:
+                result = os.path.dirname(result)
+
+        path_or_file: str = result if check_path is True else os.path.join(result, check_path)
+        if not os.path.exists(path_or_file):
+            raise RuntimeError(f'The file or directory "{path_or_file}" does not exists')
+
+        return result
 
     @staticmethod
     def check_directory(
