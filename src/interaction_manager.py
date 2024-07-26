@@ -27,7 +27,7 @@ class InteractionManager:
 
         self.config_parser[section][option] = value
 
-        with open(self.ini_file, "w", encoding="utf-8") as file:
+        with open(self.ini_file, "w", encoding="utf-16") as file:
             self.config_parser.write(file)
 
     def get_ini_settings(
@@ -42,7 +42,7 @@ class InteractionManager:
 
             open(self.ini_file, "w").close()
 
-        self.config_parser.read(self.ini_file, "utf-8")
+        self.config_parser.read(self.ini_file, "utf-16")
 
         if not self.config_parser.has_section(section):
             if mode == "strict":
