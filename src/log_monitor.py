@@ -66,7 +66,9 @@ class LogMonitor:
         if not os.path.exists(log_dir):
             raise FileNotFoundError(f'The file "{log_dir}" could not be found')
 
-        return open(log_dir, "r")
+        # Uses UTF-8 encoding and ignores any encoding errors, this probably fixes possible exceptions
+        # but may have data loss which are probably not so important
+        return open(log_dir, "r", encoding="utf-8", errors="ignore")
 
     def tail_file(self) -> Generator[str, Any, None]:
         while True:
@@ -84,7 +86,7 @@ class LogMonitor:
                 self.rpc.update_rpc()
 
             if not self.rpc.game_monitor.is_process_running():
-                self._logger.debug("Game proccess is not running, exiting...")
+                self._logger.info("Game proccess is not running, exiting...")
                 handle_exit.safe_exit()
 
             time.sleep(config.LOG_TAIL_SLEEP_TIME)

@@ -8,7 +8,9 @@ from utils.handle_exit import safe_exit
 
 
 def exception_handler(exc_type: Any, exc_value: Any, tb: Any) -> None:
-    with open(os.path.join(config.MAIN_DIRECTORY, "traceback.txt"), "w") as file:
+    with open(
+        os.path.join(config.MAIN_DIRECTORY, "traceback.txt"), "w", encoding="utf-8", errors="ignore"
+    ) as file:
         for line in traceback.format_exception(exc_type, exc_value, tb):
             file.writelines(line)
 

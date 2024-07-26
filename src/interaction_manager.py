@@ -11,8 +11,10 @@ class InteractionManager:
 
         self.ini_file: str = ini_file
 
-        # Creates a case-sensitive ConfigParser
-        # and accepts comments "as values" (also duplicate values)
+        if not os.path.exists(self.ini_file):
+            raise FileNotFoundError(f'The file "{self.ini_file}" was not found')
+
+        # Creates a case-sensitive ConfigParser and accepts comments "as values" (also duplicate values)
         # this may have side effects, e.g. some blank lines are not preserved
         self.config_parser: ConfigParser = ConfigParser(
             comment_prefixes="/", allow_no_value=True, strict=False
@@ -25,7 +27,7 @@ class InteractionManager:
 
         self.config_parser[section][option] = value
 
-        with open(self.ini_file, "w", encoding="utf-8") as file:
+        with open(self.ini_file, "w", encoding="utf-16") as file:
             self.config_parser.write(file)
 
     def get_ini_settings(
@@ -40,7 +42,7 @@ class InteractionManager:
 
             open(self.ini_file, "w").close()
 
-        self.config_parser.read(self.ini_file, "utf-8")
+        self.config_parser.read(self.ini_file, "utf-16")
 
         if not self.config_parser.has_section(section):
             if mode == "strict":
@@ -74,26 +76,35 @@ class InteractionManager:
         *,
         check_path: Union[str, bool, None] = None,
         type_: type = str,
+        dirname: bool = False,
     ) -> Any:
         result: Any = os.getenv(
             name if name else section, self.get_ini_settings(section, name, type_=type_)
         )
 
-        if check_path is True:
-            self.check_directory(result if result is not None else default)
-        elif isinstance(check_path, str):
-            self.check_directory(result if result is not None else default, check_file=check_path)
+        if result is None:
+            if default is None:
+                raise RuntimeError(
+                    "Missing required configuration. "
+                    f"Please set it on your config.ini: [{section}]{': ' + name if name else ''}"
+                )
 
-        if result is not None:
+            result = default
+
+        if not check_path or not isinstance(result, str):
             return result
 
-        if default is None:
-            raise RuntimeError(
-                "Missing required configuration. "
-                f"Please set it on your config.ini: [{section}]{': ' + name if name else ''}"
-            )
+        if dirname:
+            _, extension = os.path.splitext(result)
 
-        return default
+            if extension:
+                result = os.path.dirname(result)
+
+        path_or_file: str = result if check_path is True else os.path.join(result, check_path)
+        if not os.path.exists(path_or_file):
+            raise RuntimeError(f'The file or directory "{path_or_file}" does not exists')
+
+        return result
 
     @staticmethod
     def check_directory(
@@ -186,3 +197,29 @@ class InteractionManager:
                 return True
             elif response == "n" or response == "no":
                 return False
+
+    def handle_backup_configs(self, ini_file: str) -> None:
+        if not os.path.isfile(ini_file):
+            return
+
+        self._logger.info("Applying backup file")
+
+        backup_configparser: ConfigParser = ConfigParser(
+            comment_prefixes="/", allow_no_value=True, strict=False, interpolation=None
+        )
+        backup_configparser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
+
+        self.config_parser.read(self.ini_file, "utf-16")
+        backup_configparser.read(ini_file, "utf-16")
+
+        for section in backup_configparser.sections():
+            if section == "INTERNAL":
+                continue
+
+            for key, value in backup_configparser.items(section):
+                if key in ("GIMI_DIRECTORY", "START_GAME_AND_GIMI", "GAME_EXE_PATH"):
+                    continue
+
+                self.set_ini_option(section, key, value)
+
+        os.remove(ini_file)
