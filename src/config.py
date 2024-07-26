@@ -53,17 +53,11 @@ _VERSION: Final[str] = interactor.get_ini_settings("INTERNAL", "Version")
 # Path to your 3DMigoto (e.g. C:\3dmigoto\)
 # This is the only really required configuration that can be set through the config.ini
 GIMI_DIRECTORY: Final[str] = interactor.get_environ_or_ini(
-    "SETTINGS", "GIMI_DIRECTORY", check_path="3DMigoto Loader.exe"
+    "SETTINGS", "GIMI_DIRECTORY", check_path="3DMigoto Loader.exe", dirname=True
 )
 
 GIMI_LOG_NAME: Final[str] = interactor.get_environ_or_ini(
     "SETTINGS", "GIMI_LOG_NAME", "d3d11_log.txt"
-)
-
-# Game process name
-# Defaults to GenshinImpact.exe
-GAME_PROCESS_NAME: Final[str] = str(
-    interactor.get_environ_or_ini("SETTINGS", "GAME_PROCESS_NAME", "GenshinImpact.exe")
 )
 
 # Starts the game and GIMI automatically on initialization
@@ -77,6 +71,16 @@ GAME_EXE_PATH: Final[str] = interactor.get_environ_or_ini(
     "GAME_EXE_PATH",
     None if START_GAME_AND_GIMI else "",
     check_path=True if START_GAME_AND_GIMI else False,
+)
+
+# Game process name
+# Could probably be GenshinImpact.exe or YuanShen.exe
+GAME_PROCESS_NAME: Final[str] = str(
+    interactor.get_environ_or_ini(
+        "SETTINGS",
+        "GAME_PROCESS_NAME",
+        "GenshinImpact.exe" if not START_GAME_AND_GIMI else os.path.basename(GAME_EXE_PATH),
+    )
 )
 
 # If set to True, the program will copy the .ini data files to the GIMI's Mods folder
