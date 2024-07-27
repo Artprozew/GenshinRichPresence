@@ -8,14 +8,14 @@
 ; To use WordFind
 !include "WordFunc.nsh"
 
-; To use GetSize 
+; To use GetSize
 !include "FileFunc.nsh"
 
 ;--------------------------------
 ; General
 
 !define NAME "GenshinRichPresence"
-!define VERSION "1.0.2"
+!define VERSION "1.1.0"
 
 !define PROJECT_FOLDER ".\dist\${NAME}"
 !define FILES_FOLDER "${PROJECT_FOLDER}"
@@ -111,7 +111,7 @@ Page custom pageGetGameDir
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_UNPAGE_FINISH
-  
+
 ;--------------------------------
 ; Languages
 
@@ -176,7 +176,7 @@ Section "Main files"
             'No' keeps your 'backup_config.ini', but may overwrite the current 'config.ini' without making a backup of it.$\n\
             'Cancel' aborts the installation." \
             IDYES overwrite IDNO continue
-            
+
             ; No jumpto, cancel was clicked
             Abort "Aborting installation"
         ${EndIf}
@@ -260,6 +260,7 @@ Section "Uninstall"
 
     Delete "$DESKTOP\{NAME}.lnk"
     Delete "$SMPROGRAMS\${NAME}\${NAME}.lnk"
+    Delete "$SMPROGRAMS\${NAME}\Uninstall ${NAME}.lnk"
 
     Delete "$INSTDIR\*.*"
     Delete "$INSTDIR\backup_config.ini"
