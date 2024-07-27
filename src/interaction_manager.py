@@ -42,7 +42,13 @@ class InteractionManager:
 
             open(self.ini_file, "w").close()
 
-        self.config_parser.read(self.ini_file, "utf-16")
+        try:
+            self.config_parser.read(self.ini_file, "utf-16")
+        except UnicodeError:
+            raise UnicodeError(
+                f"Could not open the '{self.ini_file}' file to read.\n"
+                "The encoding seems to be wrong, it needs to be UTF-16-LE."
+            )
 
         if not self.config_parser.has_section(section):
             if mode == "strict":
@@ -209,8 +215,15 @@ class InteractionManager:
         )
         backup_configparser.optionxform = lambda option: option  # type: ignore # github.com/python/mypy/issues/5062
 
-        self.config_parser.read(self.ini_file, "utf-16")
-        backup_configparser.read(ini_file, "utf-16")
+        try:
+            self.config_parser.read(self.ini_file, "utf-16")
+            backup_configparser.read(ini_file, "utf-16")
+        except UnicodeError:
+            self._logger.warning(
+                "Could not open ini file to apply the backup.\n"
+                "The encoding seems to be wrong, it needs to be UTF-16-LE."
+            )
+            return
 
         for section in backup_configparser.sections():
             if section == "INTERNAL":
