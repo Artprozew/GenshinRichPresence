@@ -95,7 +95,7 @@ class GameMonitor:
 
             self._logger.info("Starting GIMI")
             subprocess.Popen(
-                f'{os.path.join(config.GIMI_DIRECTORY, "3DMigoto Loader.exe")}',
+                os.path.join(config.GIMI_DIRECTORY, "3DMigoto Loader.exe"),
                 start_new_session=True,
                 shell=True,
                 cwd=config.GIMI_DIRECTORY,

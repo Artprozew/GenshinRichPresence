@@ -111,7 +111,7 @@ class DiscordRichPresence(pypresence.Presence):
                 if self.current_character in configRPC_characters:
                     all_attrib.append(configRPC_characters[self.current_character])
                 else:
-                    all_attrib.append("".join(self.current_character.split()).lower())
+                    all_attrib.append("_".join(self.current_character.split()).lower())
             elif attribute == "region_image":
                 if self.current_region in configRPC_regions:
                     all_attrib.append(configRPC_regions[self.current_region])
