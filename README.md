@@ -4,6 +4,11 @@
 [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/Artprozew/GenshinRichPresence/master?style=for-the-badge)
 ![Downloads](https://img.shields.io/github/downloads/Artprozew/GenshinRichPresence/total?style=for-the-badge)
+![Release](https://img.shields.io/github/v/release/Artprozew/GenshinRichPresence?style=for-the-badge)
+
+**Check it out on GameBanana**:
+</br>
+<a href="https://gamebanana.com/tools/17445"><img src="https://gamebanana.com/tools/embeddables/17445?type=medium"/></a>
 
 ## Overview
 
